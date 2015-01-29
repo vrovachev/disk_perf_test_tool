@@ -1,3 +1,4 @@
+import sys
 import json
 import gspread
 import argparse
@@ -7,7 +8,11 @@ from config import DEFAULT_FILE_PATH, PASSWORD, EMAIL, COL_COUNT, WORK_SHEET, DO
 
 
 def load_data(file_name):
-    return json.loads(open(file_name).read())
+    if file_name == '-':
+        data = sys.stdin.read()
+    else:
+        data = open(file_name).read()
+    return json.loads(data)
 
 def insert_data(data):
     gc = gspread.login(EMAIL, PASSWORD)
@@ -19,9 +24,15 @@ def insert_data(data):
         worksheet.update_cell(i, 2, v)
 
 
-if __name__ == '__main__':
+def main(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--name', help='data file path', default=DEFAULT_FILE_PATH)
-    results = parser.parse_args()
+    parser.add_argument('input_file_name',
+                        help='data file path', 
+                        default='-')
+    results = parser.parse_args(argv)
     data = load_data(results.name)
     insert_data(data)
+
+
+if __name__ == '__main__':
+    exit(main(sys.argv[1:]))
