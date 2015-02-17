@@ -1,7 +1,8 @@
 from urlparse import urlparse
+import sqlite3
 from flask import Flask, render_template, url_for, request, g, make_response
 from flask_bootstrap import Bootstrap
-from config import TEST_PATH
+from config import TEST_PATH, DATABASE_URI
 from report import build_vertical_bar, build_lines_chart
 from storage_api import builds_list, collect_builds, create_measurement
 from logging import getLogger, INFO
@@ -13,6 +14,7 @@ from web_app.keystone import KeystoneAuth
 
 app = Flask(__name__)
 db = SQLAlchemy(app)
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
 Bootstrap(app)
 from web_app import models
 

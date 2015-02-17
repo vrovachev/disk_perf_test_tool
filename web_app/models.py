@@ -1,3 +1,4 @@
+from sqlalchemy import ForeignKey, Table
 from sqlalchemy.orm import relationship
 from web_app import db
 from web_app import app
@@ -5,10 +6,9 @@ from web_app import app
 
 class Build(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    id = db.Column(db.Integer, primary_key=True)
-    build = db.Column(db.String(64), index=True, unique=True)
-    md5 = db.Column(db.String(64), index=True, unique=True)
-    type = db.Column(db.Integer, index=True, unique=True)
+    name = db.Column(db.String(64))
+    md5 = db.Column(db.String(64))
+    type = db.Column(db.Integer)
 
 
 class Param(db.Model):
@@ -20,7 +20,8 @@ class Param(db.Model):
 
 class ParamCombination(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    params = relationship("Param")
+    # param_id = db.Column(db.Integer, ForeignKey('param.id'))
+    # param = relationship("param")
 
 
 class Lab(db.Model):
@@ -34,6 +35,7 @@ class Result(db.Model):
     build_id = db.Column(db.Integer)
     lab_id = db.Column(db.Integer)
     time = db.Column(db.DateTime)
-    params_combination = relationship("ParamCombination", uselist=False)
+    # param_combination_id = db.Column(db.Integer, ForeignKey('param_combination.id'))
+    # param_combination = relationship("param_combination")
     bandwith = db.Column(db.Float)
     meta = db.Column(db.String(4096))
