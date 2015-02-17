@@ -6,13 +6,15 @@ from report import build_vertical_bar, build_lines_chart
 from storage_api import builds_list, collect_builds, create_measurement
 from logging import getLogger, INFO
 
+from flask.ext.sqlalchemy import SQLAlchemy
 import json
 import os.path
-import math
 from web_app.keystone import KeystoneAuth
 
 app = Flask(__name__)
+db = SQLAlchemy(app)
 Bootstrap(app)
+from web_app import models
 
 
 def get_resource_as_string(name, charset='utf-8'):
