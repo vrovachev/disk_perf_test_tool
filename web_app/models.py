@@ -1,7 +1,6 @@
-from sqlalchemy import ForeignKey, Table
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from web_app import db
-from web_app import app
 
 
 class Build(db.Model):
@@ -20,9 +19,12 @@ class Param(db.Model):
 
 class ParamCombination(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    param_1 = db.Column(db.Integer, ForeignKey('param.id'))
-    param_2 = db.Column(db.Integer, ForeignKey('param.id'))
-    param_3 = db.Column(db.Integer, ForeignKey('param.id'))
+    param_1 = db.Column(db.Text())
+    param_2 = db.Column(db.Text())
+    param_3 = db.Column(db.Text())
+
+    def __repr__(self):
+        return "(" + self.param_1 + " " + self.param_2 + " " + self.param_3 + ")"
 
 
 class Lab(db.Model):
@@ -36,7 +38,7 @@ class Result(db.Model):
     build_id = db.Column(db.Integer)
     lab_id = db.Column(db.Integer)
     time = db.Column(db.DateTime)
-    param_combination_id = db.Column(db.Integer, ForeignKey('param_combination.id'))
-    param_combination = relationship("param_combination")
+    # param_combination_id = db.Column(db.Integer, ForeignKey('param_combination.id'))
+    # param_combination = relationship("param_combination")
     bandwith = db.Column(db.Float)
     meta = db.Column(db.String(4096))
