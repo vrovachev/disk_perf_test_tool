@@ -1,4 +1,5 @@
 from flask import json
+from sqlalchemy import sql
 from sqlalchemy.orm import Session
 from web_app import db
 from web_app.models import Build, Lab, Result, ParamCombination, Param
@@ -7,7 +8,7 @@ from web_app.models import Build, Lab, Result, ParamCombination, Param
 def add_io_params(session):
     param1 = Param(name="operation", type='{"write", "randwrite", "read", "randread"}', descr="type of write operation")
     param2 = Param(name="sync", type='{"a", "s"}', descr="Write mode synchronous/asynchronous")
-    param3 = Param(name="block size", type='size_kmg')
+    param3 = Param(name="block size", type='{"1k", "2k", "4k", "8k", "16k", "32k", "64k", "128k", "256k"}')
 
     session.add(param1)
     session.add(param2)
@@ -16,8 +17,8 @@ def add_io_params(session):
     session.commit()
 
 
-def add_build(session, build_name, build_type, md5):
-    build = Build(type=build_type, name=build_name, md5=md5)
+def add_build(session, build_id, build_name, build_type, md5):
+    build = Build(type=build_type, build_id=build_id, name=build_name, md5=md5)
     session.add(build)
     session.commit()
 
@@ -33,41 +34,85 @@ def insert_results(session, build_id, lab_id, params_combination_id,
 
 
 def add_param_comb(session, *params):
-    print params
-    # result = session.query(ParamCombination).filter().all()
-    # print result[0].param_1
-    # print result[0].param_2
-    # print result[0].param_3
+    params_names = sorted([s for s in dir(ParamCombination) if s.startswith('param_')])
+    d = zip(params_names, params)
+    where = ""
 
-    r = session.query(Param).filter(Param.id == 1).one()
-    print r
-    result = eval(r.type)
+    for item in d:
+        where = sql.and_(where, getattr(ParamCombination, item[0]) == item[1])
 
-    p = "bla"
-    if p not in result:
-        result.add(p)
+    query = session.query(ParamCombination).filter(where)
+    rs = session.execute(query).fetchall()
 
-    r.type = str(result)
-    session.add(r)
-    session.commit()
 
-    print result
+    if len(rs) == 0:
+        param_comb = ParamCombination()
+
+        for p in params_names:
+            i = int(p.split('_')[1])
+            param_comb.__setattr__('param_' + str(i), params[i - 1])
+
+            param = session.query(Param).filter(Param.id == i).one()
+            values = eval(param.type)
+
+            if params[i - 1] not in values:
+                values.add(params[i - 1])
+                param.type = str(values)
+
+        session.add(param_comb)
+        session.commit()
+        return param_comb.id
+    else:
+        return rs[0][0]
+        session.commit()
+
+
+def add_lab(lab_name):
+    pass
 
 
 def json_to_db(json_data):
     data = json.loads(json_data)
-    #
     session = db.session()
     add_io_params(session)
-    for build_data in data:
-        # build_id = add_build(session,
-        #                      build_data.pop("build_id"),
-        #                      build_data.pop("type"),
-        #                      build_data.pop("iso_md5"))
 
+    for build_data in data:
+        build_id = add_build(session,
+                             build_data.pop("build_id"),
+                             build_data.pop("name"),
+                             build_data.pop("type"),
+                             build_data.pop("iso_md5"))
+
+        from datetime import datetime
+        date =  build_data.pop("date")
+        # date = datetime.strftime((date, "%Y-%m-%d %H:%M:%S.%f")
         for params, [bw, dev] in build_data.items():
             param_comb_id = add_param_comb(session, *params.split(" "))
-            # insert_results(session, build_id, param_id, bw, dev)
+            print param_comb_id
+            result = Result(param_combination_id=param_comb_id, bandwith=bw)
+            session.add(result)
+            session.commit()
+
+
+def load_data(*params):
+    session = db.session()
+    params_names = sorted([s for s in dir(ParamCombination) if s.startswith('param_')])
+    d = zip(params_names, params)
+    where = ""
+
+    for item in d:
+        where = sql.and_(where, getattr(ParamCombination, item[0]) == item[1])
+
+    query = session.query(ParamCombination).filter(where)
+    rs = session.execute(query).fetchall()
+
+    ids = [r[0] for r in rs]
+
+    results = session.query(Result).filter(Result.param_combination_id.in_(ids))
+    rs = session.execute(results).fetchall()
+
+    return [r[5] for r in rs]
+
 
 
 if __name__ == '__main__':
@@ -104,4 +149,5 @@ if __name__ == '__main__':
         "iso_md5": "bla bla"\
     }]'
 
-    json_to_db(json_data)
+    # json_to_db(json_data)
+    print load_data("write")

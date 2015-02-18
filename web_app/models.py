@@ -5,6 +5,7 @@ from web_app import db
 
 class Build(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    build_id = db.Column(db.String(64))
     name = db.Column(db.String(64))
     md5 = db.Column(db.String(64))
     type = db.Column(db.Integer)
@@ -38,7 +39,6 @@ class Result(db.Model):
     build_id = db.Column(db.Integer)
     lab_id = db.Column(db.Integer)
     time = db.Column(db.DateTime)
-    # param_combination_id = db.Column(db.Integer, ForeignKey('param_combination.id'))
-    # param_combination = relationship("param_combination")
+    param_combination_id = db.Column(db.Integer, ForeignKey('param_combination.id'))
     bandwith = db.Column(db.Float)
     meta = db.Column(db.String(4096))
