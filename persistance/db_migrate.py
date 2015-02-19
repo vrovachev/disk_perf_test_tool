@@ -1,6 +1,6 @@
 import imp
 from migrate.versioning import api
-from web_app import db
+import db
 from config import SQLALCHEMY_MIGRATE_REPO, DATABASE_URI
 
 

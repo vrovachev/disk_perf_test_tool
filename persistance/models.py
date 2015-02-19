@@ -1,12 +1,5 @@
-from config import DATABASE_URI
-from flask import Flask
-from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import relationship
-app = Flask(__name__)
-db = SQLAlchemy(app)
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
-
+from persistance import db
 
 class Build(db.Model):
     id = db.Column(db.Integer, primary_key=True)

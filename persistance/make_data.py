@@ -1,14 +1,12 @@
 import datetime
-from config import DATABASE_URI
-from flask import json, url_for, Flask
-from flask.ext.sqlalchemy import SQLAlchemy
+
+from flask import json
 from sqlalchemy import sql
-from sqlalchemy.orm import Session
-# from web_app import db
-from web_app.models import Build, Lab, Result, ParamCombination, Param, db
+from persistance.models import Build, Result, ParamCombination, Param
+from persistance import db
 
 
-
+#class displays measurement. Moved from storage_api_v_1 to avoid circular imports.
 class Measurement(object):
     def __init__(self):
         self.build = ""
@@ -25,6 +23,7 @@ class Measurement(object):
             self.md5 + " " + str(self.results)
 
 
+#filling Param table with initial parameters.
 def add_io_params(session):
     param1 = Param(name="operation", type='{"write", "randwrite", "read", "randread"}', descr="type of write operation")
     param2 = Param(name="sync", type='{"a", "s"}', descr="Write mode synchronous/asynchronous")
@@ -37,6 +36,7 @@ def add_io_params(session):
     session.commit()
 
 
+#function which adds particular build to database.
 def add_build(session, build_id, build_name, build_type, md5):
     build = Build(type=build_type, build_id=build_id, name=build_name, md5=md5)
     session.add(build)
@@ -45,6 +45,7 @@ def add_build(session, build_id, build_name, build_type, md5):
     return build.id
 
 
+#function insert particular result.
 def insert_results(session, build_id, lab_id, params_combination_id,
                    time=None, bandwith=0.0, meta=""):
     result = Result(build_id=build_id, lab_id=lab_id, params_combination_id=params_combination_id, time=time,
@@ -53,6 +54,7 @@ def insert_results(session, build_id, lab_id, params_combination_id,
     session.commit()
 
 
+#function responsible for adding particular params combination to database
 def add_param_comb(session, *params):
     params_names = sorted([s for s in dir(ParamCombination) if s.startswith('param_')])
     d = zip(params_names, params)
@@ -90,6 +92,7 @@ def add_lab(lab_name):
     pass
 
 
+#function store list of builds in database
 def json_to_db(json_data):
     data = json.loads(json_data)
     session = db.session()
@@ -113,6 +116,7 @@ def json_to_db(json_data):
             session.commit()
 
 
+#function loads data by parametres described in *params tuple.
 def load_data(*params):
     session = db.session()
     params_names = sorted([s for s in dir(ParamCombination) if s.startswith('param_')])
@@ -133,6 +137,7 @@ def load_data(*params):
     return [r[5] for r in rs]
 
 
+#load all builds from database
 def load_all():
     session = db.session()
     r = session.query(Param).filter(Param.id == 1).all()
@@ -141,6 +146,7 @@ def load_all():
     return results
 
 
+#function collecting all builds from database and filter it by names
 def collect_builds_from_db(*names):
     results = load_all()
     d = {}
@@ -179,6 +185,7 @@ def create_measurement(data):
     return m
 
 
+#function preparing data for display plots.
 def prepare_build_data(build_name):
     session = db.session()
     build = session.query(Build).filter(Build.name == build_name).one()
@@ -191,7 +198,9 @@ def prepare_build_data(build_name):
         for r in res:
             names.append(r.name)
 
-    d = collect_builds_from_db(names)
+
+    d = collect_builds_from_db()
+    d = {k: v for k, v in d.items() if k in names}
     results = {}
 
     for data in d.keys():
@@ -201,6 +210,7 @@ def prepare_build_data(build_name):
     return results
 
 
+#function getting list of all builds available to index page
 def builds_list():
     res = []
     builds = set()
@@ -222,6 +232,7 @@ def builds_list():
     return res
 
 
+#Function for getting result to display table
 def get_data_for_table(build_name):
     session = db.session()
     build = session.query(Build).filter(Build.name == build_name).one()
@@ -236,13 +247,28 @@ def get_data_for_table(build_name):
 
     d = collect_builds_from_db()
     d = {k: v for k, v in d.items() if k in names}
-    results = {}
+    output = []
 
-    for data in d.keys():
-        m = create_measurement(d[data])
-        results[m.build_type] = m
+    for key, value in d.items():
+        result = {}
+        build = value[0]
+        result["build"] = build.build_id
+        result["iso_md5"] = build.md5
+        result["type"] = build.type
+        result["date"] = "Date must be here"
 
-    return results
+        for i in range(1, len(value), 2):
+            r = value[i]
+            param_combination = value[i + 1]
+
+            if not str(param_combination) in result:
+                result[str(param_combination)] = [r.bandwith]
+            else:
+                result[str(param_combination)].append(r.bandwith)
+
+        output.append(result)
+
+    return output
 
 
 if __name__ == '__main__':

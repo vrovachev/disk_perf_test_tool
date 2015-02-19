@@ -2,9 +2,11 @@ import sqlite3
 from migrate.versioning import api
 from config import DATABASE_URI
 from config import SQLALCHEMY_MIGRATE_REPO
-from web_app import db, app
+
 
 import os.path
+from persistance import db
+
 sqlite3.connect(os.path.abspath("app.db"))
 
 db.create_all()
