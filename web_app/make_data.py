@@ -2,7 +2,7 @@ import datetime
 from flask import json, url_for
 from sqlalchemy import sql
 from sqlalchemy.orm import Session
-import db
+from web_app import db
 from web_app.models import Build, Lab, Result, ParamCombination, Param
 
 
@@ -138,7 +138,7 @@ def load_all():
     return results
 
 
-def collect_builds_from_db(names):
+def collect_builds_from_db(*names):
     results = load_all()
     d = {}
 
@@ -152,6 +152,9 @@ def collect_builds_from_db(names):
         else:
             d[build_data.name].append(result_data)
             d[build_data.name].append(param_combination_data)
+
+    if len(names) == 0:
+        return {k: v for k, v in d.items()}
 
     return {k: v for k, v in d.items() if k in names}
 
@@ -317,5 +320,6 @@ if __name__ == '__main__':
     # print load_data()
     load_all()
     builds_list()
+    print collect_builds_from_db()
     prepare_build_data('6.1 Dev')
     print load_all()
