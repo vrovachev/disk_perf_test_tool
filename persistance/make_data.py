@@ -222,7 +222,7 @@ def builds_list():
             builds.add(build.name)
             d = {}
             d["type"] = build.type
-            # d["url"] = url_for("render_test", test_name=build.name)
+            d["url"] = build.name
             d["date"] = result.date
             d["name"] = build.name
             res.append(d)
@@ -343,7 +343,7 @@ if __name__ == '__main__':
         "randread a 1024k": [68683, 8604],\
         "randwrite s 256k": [3277, 146],\
         "write a 1024k": [24069, 660],\
-        "type": "GA",\
+        "type": "sometype",\
         "write a 64k": [24555, 1006],\
         "write s 64k": [1285, 57],\
         "write a 256k": [24928, 503],\
@@ -358,18 +358,19 @@ if __name__ == '__main__':
         "write s 4k": [87, 3],\
         "read a 4k": [88367, 6471],\
         "read a 256k": [80904, 8930],\
-        "name": "GA - 6.0 GA",\
+        "name": "somedev",\
         "randwrite s 1k": [20, 0],\
         "randwrite s 64k": [1029, 34],\
         "write s 1k": [21, 0],\
         "iso_md5": "bla bla"\
     }]'
 
-    json_to_db(json_data)
+    # json_to_db(json_data)
     # print load_data()
     get_data_for_table('6.1 Dev')
     load_all()
     builds_list()
     print collect_builds_from_db()
-    prepare_build_data('6.1 Dev')
-    print load_all()
+    print prepare_build_data('6.1 Dev')
+    print builds_list()
+    print get_data_for_table('6.1 Dev')

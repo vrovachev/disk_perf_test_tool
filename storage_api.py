@@ -111,3 +111,7 @@ def create_measurement(build):
     m.results = {k: v for k, v in build.items()}
 
     return m
+
+
+
+collect_builds()

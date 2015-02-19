@@ -1,10 +1,12 @@
+import json
 from urlparse import urlparse
-from flask import render_template, url_for, make_response
+from config import TEST_PATH
+from flask import render_template, url_for, make_response, request
 from report import build_vertical_bar, build_lines_chart
 from logging import getLogger, INFO
 from web_app import app
 from web_app.keystone import KeystoneAuth
-from persistance.make_data import builds_list, prepare_build_data
+from persistance.make_data import builds_list, prepare_build_data, get_data_for_table
 from web_app.app import app
 import os.path
 
@@ -81,7 +83,7 @@ def merge_builds(b1, b2):
             b1[pair[0]] = pair[1]
 
 
-@app.route("/", methods=['GET', 'POST'])
+@app.route("/", methods=['GET'])
 def index():
     data = builds_list()
     return render_template("index.html", tests=data)
@@ -168,48 +170,48 @@ def render_table(test_name):
                            back_url=url_for('render_test', test_name=test_name), lab=data)
 
 
-# @app.route("/api/tests/<test_name>", methods=['POST'])
-# def add_test(test_name):
-#     test = json.loads(request.data)
-#
-#     file_name = TEST_PATH + '/' + 'storage' + ".json"
-#
-#     if not os.path.exists(file_name):
-#             with open(file_name, "w+") as f:
-#                 f.write(json.dumps([]))
-#
-#     builds = collect_builds()
-#     res = None
-#
-#     for b in builds:
-#         if b['name'] == test['name']:
-#             res = b
-#             break
-#
-#     if res is None:
-#         builds.append(test)
-#     else:
-#         merge_builds(res, test)
-#
-#     with open(TEST_PATH + '/' + 'storage' + ".json", 'w+') as f:
-#             f.write(json.dumps(builds))
-#
-#     return "Created", 201
-#
-#
-# @app.route("/api/tests", methods=['GET'])
-# def get_all_tests():
-#     return json.dumps(collect_builds())
-#
-#
-# @app.route("/api/tests/<test_name>", methods=['GET'])
-# def get_test(test_name):
-#     builds = collect_builds()
-#
-#     for build in builds:
-#         if build["type"] == test_name:
-#             return json.dumps(build)
-#     return "Not Found", 404
+@app.route("/api/tests/<test_name>", methods=['POST'])
+def add_test(test_name):
+    test = json.loads(request.data)
+
+    file_name = TEST_PATH + '/' + 'storage' + ".json"
+
+    if not os.path.exists(file_name):
+            with open(file_name, "w+") as f:
+                f.write(json.dumps([]))
+
+    builds = get_data_for_table()
+    res = None
+
+    for b in builds:
+        if b['name'] == test['name']:
+            res = b
+            break
+
+    if res is None:
+        builds.append(test)
+    else:
+        merge_builds(res, test)
+
+    with open(TEST_PATH + '/' + 'storage' + ".json", 'w+') as f:
+            f.write(json.dumps(builds))
+
+    return "Created", 201
+
+
+@app.route("/api/tests", methods=['GET'])
+def get_all_tests():
+    return json.dumps(get_data_for_table())
+
+
+@app.route("/api/tests/<test_name>", methods=['GET'])
+def get_test(test_name):
+    builds = get_data_for_table(test_name)
+
+    for build in builds:
+        if build["type"] == test_name:
+            return json.dumps(build)
+    return "Not Found", 404
 
 
 if __name__ == "__main__":
