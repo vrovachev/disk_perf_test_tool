@@ -1,6 +1,11 @@
+from config import DATABASE_URI
+from flask import Flask
+from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
-from web_app import db
+app = Flask(__name__)
+db = SQLAlchemy(app)
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
 
 
 class Build(db.Model):

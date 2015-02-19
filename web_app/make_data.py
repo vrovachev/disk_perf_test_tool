@@ -1,9 +1,12 @@
 import datetime
-from flask import json, url_for
+from config import DATABASE_URI
+from flask import json, url_for, Flask
+from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import sql
 from sqlalchemy.orm import Session
-from web_app import db
-from web_app.models import Build, Lab, Result, ParamCombination, Param
+# from web_app import db
+from web_app.models import Build, Lab, Result, ParamCombination, Param, db
+
 
 
 class Measurement(object):
@@ -219,6 +222,29 @@ def builds_list():
     return res
 
 
+def get_data_for_table(build_name):
+    session = db.session()
+    build = session.query(Build).filter(Build.name == build_name).one()
+    names = []
+
+    if build.type == 'GA':
+        names = [build_name]
+    else:
+        res = session.query(Build).filter(Build.type.in_(['GA', 'master', build_name])).all()
+        for r in res:
+            names.append(r.name)
+
+    d = collect_builds_from_db()
+    d = {k: v for k, v in d.items() if k in names}
+    results = {}
+
+    for data in d.keys():
+        m = create_measurement(d[data])
+        results[m.build_type] = m
+
+    return results
+
+
 if __name__ == '__main__':
     # add_build("Some build", "GA", "bla bla")
     json_data = '[{\
@@ -317,6 +343,7 @@ if __name__ == '__main__':
 
     # json_to_db(json_data)
     # print load_data()
+    get_data_for_table('6.1 Dev')
     load_all()
     builds_list()
     print collect_builds_from_db()
