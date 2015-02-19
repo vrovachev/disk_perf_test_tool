@@ -1,8 +1,8 @@
 import datetime
-from flask import json
+from flask import json, url_for
 from sqlalchemy import sql
 from sqlalchemy.orm import Session
-from web_app import db
+import db
 from web_app.models import Build, Lab, Result, ParamCombination, Param
 
 
@@ -195,6 +195,28 @@ def prepare_build_data(build_name):
     return results
 
 
+def builds_list():
+    res = []
+    builds = set()
+    data = load_all()
+
+
+    for item in data:
+        build = item[1]
+        result = item[0]
+
+        if not build.name in builds:
+            builds.add(build.name)
+            d = {}
+            d["type"] = build.type
+            # d["url"] = url_for("render_test", test_name=build.name)
+            d["date"] = result.date
+            d["name"] = build.name
+            res.append(d)
+
+    return res
+
+
 if __name__ == '__main__':
     # add_build("Some build", "GA", "bla bla")
     json_data = '[{\
@@ -293,5 +315,7 @@ if __name__ == '__main__':
 
     # json_to_db(json_data)
     # print load_data()
+    load_all()
+    builds_list()
     prepare_build_data('6.1 Dev')
     print load_all()

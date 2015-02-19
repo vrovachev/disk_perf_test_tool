@@ -87,9 +87,6 @@ def collect_builds():
     return builds
 
 
-
-
-
 def builds_list():
     data = []
 
