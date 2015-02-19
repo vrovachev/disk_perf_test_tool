@@ -9,7 +9,7 @@ from web_app.keystone import KeystoneAuth
 from persistance.make_data import builds_list, prepare_build_data, get_data_for_table
 from web_app.app import app
 import os.path
-
+from werkzeug.routing import Rule
 
 
 def total_lab_info(data):
@@ -78,18 +78,28 @@ def merge_builds(b1, b2):
 
     for pair in b2.items():
         if pair[0] in b1 and type(pair[1]) is list:
-            b1[pair[0]].extend(pair[1])
+                b1[pair[0]].extend(pair[1])
         else:
             b1[pair[0]] = pair[1]
 
 
-@app.route("/", methods=['GET'])
+app.url_map.add(Rule('/', endpoint='index'))
+app.url_map.add(Rule('/images/<image_name>', endpoint='get_image'))
+app.url_map.add(Rule('/tests/<test_name>', endpoint='render_test'))
+app.url_map.add(Rule('/tests/table/<test_name>/', endpoint='render_table'))
+
+
+@app.endpoint('index')
 def index():
     data = builds_list()
+
+    for elem in data:
+        elem['url'] = url_for('render_test', test_name=elem['url'])
+
     return render_template("index.html", tests=data)
 
 
-@app.route("/images/<image_name>")
+@app.endpoint('get_image')
 def get_image(image_name):
     with open("static/images/" + image_name, 'rb') as f:
         image_binary = f.read()
@@ -101,14 +111,14 @@ def get_image(image_name):
     return response
 
 
-@app.route("/tests/<test_name>", methods=['GET'])
+@app.endpoint('render_test')
 def render_test(test_name):
     tests = []
     header_keys = ['build_id', 'iso_md5', 'type', 'date']
     table = [[]]
     meta = {"__meta__": "http://172.16.52.112:8000/api/nodes"}
-    data = collect_lab_data(meta)
-    lab_meta = total_lab_info(data)
+    # data = collect_lab_data(meta)
+    lab_meta = {} #total_lab_info(data)
     results = prepare_build_data(test_name)
 
     bars = build_vertical_bar(results)
@@ -139,7 +149,7 @@ def render_test(test_name):
                            index_url=url_for('index'), lab_meta=lab_meta)
 
 
-@app.route("/tests/table/<test_name>/")
+@app.endpoint('render_table')
 def render_table(test_name):
     builds = prepare_build_data(test_name)
 
@@ -170,48 +180,48 @@ def render_table(test_name):
                            back_url=url_for('render_test', test_name=test_name), lab=data)
 
 
-@app.route("/api/tests/<test_name>", methods=['POST'])
-def add_test(test_name):
-    test = json.loads(request.data)
-
-    file_name = TEST_PATH + '/' + 'storage' + ".json"
-
-    if not os.path.exists(file_name):
-            with open(file_name, "w+") as f:
-                f.write(json.dumps([]))
-
-    builds = get_data_for_table()
-    res = None
-
-    for b in builds:
-        if b['name'] == test['name']:
-            res = b
-            break
-
-    if res is None:
-        builds.append(test)
-    else:
-        merge_builds(res, test)
-
-    with open(TEST_PATH + '/' + 'storage' + ".json", 'w+') as f:
-            f.write(json.dumps(builds))
-
-    return "Created", 201
-
-
-@app.route("/api/tests", methods=['GET'])
-def get_all_tests():
-    return json.dumps(get_data_for_table())
-
-
-@app.route("/api/tests/<test_name>", methods=['GET'])
-def get_test(test_name):
-    builds = get_data_for_table(test_name)
-
-    for build in builds:
-        if build["type"] == test_name:
-            return json.dumps(build)
-    return "Not Found", 404
+# @app.route("/api/tests/<test_name>", methods=['POST'])
+# def add_test(test_name):
+#     test = json.loads(request.data)
+#
+#     file_name = TEST_PATH + '/' + 'storage' + ".json"
+#
+#     if not os.path.exists(file_name):
+#             with open(file_name, "w+") as f:
+#                 f.write(json.dumps([]))
+#
+#     builds = get_data_for_table()
+#     res = None
+#
+#     for b in builds:
+#         if b['name'] == test['name']:
+#             res = b
+#             break
+#
+#     if res is None:
+#         builds.append(test)
+#     else:
+#         merge_builds(res, test)
+#
+#     with open(TEST_PATH + '/' + 'storage' + ".json", 'w+') as f:
+#             f.write(json.dumps(builds))
+#
+#     return "Created", 201
+#
+#
+# @app.route("/api/tests", methods=['GET'])
+# def get_all_tests():
+#     return json.dumps(get_data_for_table())
+#
+#
+# @app.route("/api/tests/<test_name>", methods=['GET'])
+# def get_test(test_name):
+#     builds = get_data_for_table(test_name)
+#
+#     for build in builds:
+#         if build["type"] == test_name:
+#             return json.dumps(build)
+#     return "Not Found", 404
 
 
 if __name__ == "__main__":
