@@ -127,18 +127,19 @@ def render_test(test_name):
 
     urls = [url_for("get_image", image_name=os.path.basename(url)) if not url.startswith('http') else url for url in urls]
 
-    return render_template("test.html", urls=urls, table_url=url_for('render_table', test_name=test_name),
+    return render_template("test.html", urls=urls,
+                           table_url=url_for('render_table', test_name=test_name),
                            index_url=url_for('index'), lab_meta=lab_meta)
 
 
 @app.endpoint('render_table')
 def render_table(test_name):
-    builds = prepare_build_data(test_name)
+    builds = get_data_for_table(test_name)
 
     header_keys = ['build_id', 'iso_md5', 'type', 'date']
     table = [[]]
     meta = {"__meta__": "http://172.16.52.112:8000/api/nodes"}
-    data = collect_lab_data(meta)
+    data = {} #collect_lab_data(meta)
 
     if len(builds) > 0:
         sorted_keys = sorted(builds[0].keys())

@@ -1,4 +1,5 @@
 import datetime
+import math
 
 from flask import json
 from sqlalchemy import sql
@@ -19,6 +20,25 @@ class Measurement(object):
     def __str__(self):
         return self.build + " " + self.build_type + " " + \
             self.md5 + " " + str(self.results)
+
+
+def mean(l):
+    n = len(l)
+
+    return sum(l) / n
+
+
+def stdev(l):
+    m = mean(l)
+    return math.sqrt(sum(map(lambda x: (x - m) ** 2, l)))
+
+
+def process_build_data(build):
+    for item in build.items():
+        if type(item[1]) is list:
+            m = mean(item[1])
+            s = stdev(item[1])
+            build[item[0]] = [m, s]
 
 
 #filling Param table with initial parameters.
@@ -180,9 +200,12 @@ def create_measurement(data):
         param_combination = data[i + 1]
 
         if not str(param_combination) in m.results:
-            m.results[str(param_combination)] = [result.bandwith, 2]
+            m.results[str(param_combination)] = [result.bandwith]
         else:
             m.results[str(param_combination)] += [result.bandwith]
+
+    for k in m.results.keys():
+        m.results[k] = [mean(m.results[k]), stdev(m.results[k])]
 
     return m
 
@@ -254,7 +277,7 @@ def get_data_for_table(build_name):
     for key, value in d.items():
         result = {}
         build = value[0]
-        result["build"] = build.build_id
+        result["build_id"] = build.build_id
         result["iso_md5"] = build.md5
         result["type"] = build.type
         result["date"] = "Date must be here"
@@ -269,6 +292,9 @@ def get_data_for_table(build_name):
                 result[str(param_combination)].append(r.bandwith)
 
         output.append(result)
+
+    for build in output:
+        process_build_data(build)
 
     return output
 
