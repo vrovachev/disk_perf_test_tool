@@ -138,7 +138,7 @@ def load_all():
     return results
 
 
-def collect_builds_from_db(*names):
+def collect_builds_from_db(names):
     results = load_all()
     d = {}
 
@@ -185,7 +185,7 @@ def prepare_build_data(build_name):
         for r in res:
             names.append(r.name)
 
-    d = collect_builds_from_db('GA - 6.0 GA', '6.1 Dev')
+    d = collect_builds_from_db(names)
     results = {}
 
     for data in d.keys():
@@ -293,5 +293,5 @@ if __name__ == '__main__':
 
     # json_to_db(json_data)
     # print load_data()
-    blab_bla()
+    prepare_build_data('6.1 Dev')
     print load_all()
