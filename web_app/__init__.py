@@ -127,24 +127,6 @@ def render_test(test_name):
 
     urls = [url_for("get_image", image_name=os.path.basename(url)) if not url.startswith('http') else url for url in urls]
 
-    if len(tests) > 0:
-        sorted_keys = sorted(tests[0].keys())
-
-        for key in sorted_keys:
-            if key not in header_keys:
-                header_keys.append(key)
-
-        for test in tests:
-            row = []
-
-            for header in header_keys:
-                if isinstance(test[header], list):
-                    row.append(str(test[header][0]) + unichr(0x00B1) + str(test[header][1]))
-                else:
-                    row.append(test[header])
-
-            table.append(row)
-
     return render_template("test.html", urls=urls, table_url=url_for('render_table', test_name=test_name),
                            index_url=url_for('index'), lab_meta=lab_meta)
 

@@ -178,7 +178,11 @@ def create_measurement(data):
     for i in range(1, len(data), 2):
         result = data[i]
         param_combination = data[i + 1]
-        m.results[str(param_combination)] = result.bandwith
+
+        if not str(param_combination) in m.results:
+            m.results[str(param_combination)] = [result.bandwith, 2]
+        else:
+            m.results[str(param_combination)] += [result.bandwith]
 
     return m
 
