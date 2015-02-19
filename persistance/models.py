@@ -1,5 +1,6 @@
 from sqlalchemy import ForeignKey
-from persistance import db
+from web_app.app import db
+
 
 class Build(db.Model):
     id = db.Column(db.Integer, primary_key=True)

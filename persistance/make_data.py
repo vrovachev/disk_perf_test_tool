@@ -2,9 +2,7 @@ import datetime
 
 from flask import json
 from sqlalchemy import sql
-from persistance.models import Build, Result, ParamCombination, Param
-from persistance import db
-
+from persistance.models import *
 
 #class displays measurement. Moved from storage_api_v_1 to avoid circular imports.
 class Measurement(object):
@@ -367,7 +365,7 @@ if __name__ == '__main__':
         "iso_md5": "bla bla"\
     }]'
 
-    # json_to_db(json_data)
+    json_to_db(json_data)
     # print load_data()
     get_data_for_table('6.1 Dev')
     load_all()

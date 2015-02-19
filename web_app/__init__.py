@@ -1,24 +1,13 @@
 from urlparse import urlparse
-
-from flask import Flask, render_template, url_for, make_response
-from flask_bootstrap import Bootstrap
-from config import DATABASE_URI
+from flask import render_template, url_for, make_response
 from report import build_vertical_bar, build_lines_chart
 from logging import getLogger, INFO
+from web_app import app
 from web_app.keystone import KeystoneAuth
 from persistance.make_data import builds_list, prepare_build_data
-
+from web_app.app import app
 import os.path
 
-app = Flask(__name__)
-Bootstrap(app)
-
-
-def get_resource_as_string(name, charset='utf-8'):
-    with app.open_resource(name) as f:
-        return f.read().decode(charset)
-
-app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
 
 
 def total_lab_info(data):
