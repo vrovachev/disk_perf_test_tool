@@ -149,5 +149,5 @@ if __name__ == '__main__':
         "iso_md5": "bla bla"\
     }]'
 
-    # json_to_db(json_data)
-    print load_data("write")
+    json_to_db(json_data)
+    # print load_data("write")
