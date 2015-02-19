@@ -200,19 +200,18 @@ def from_db():
     cursor.execute(sql)
     data = []
 
-    # for (sz, bw) in cursor.fetchall():
-    #     data.append((ssize_to_kb(sz), sz, bw))
-    #
-    # data.sort()
+    for (sz, bw) in cursor.fetchall():
+        data.append((ssize_to_kb(sz), sz, bw))
 
-    # import matplotlib.pyplot as plt
-    # xvals = range(len(data))
-    # plt.plot(xvals, [dt[2] for dt in data])
-    # plt.ylabel('bandwith')
-    # plt.xlabel('block size')
-    # plt.xticks(xvals, [dt[1] for dt in data])
-    # plt.show()
+    data.sort()
+
+    import matplotlib.pyplot as plt
+    xvals = range(len(data))
+    plt.plot(xvals, [dt[2] for dt in data])
+    plt.ylabel('bandwith')
+    plt.xlabel('block size')
+    plt.xticks(xvals, [dt[1] for dt in data])
+    plt.show()
 #
-# init_database()
+init_database()
 # from_db()
-to_db()

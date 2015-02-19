@@ -6,7 +6,6 @@ from config import TEST_PATH
 from flask import url_for
 import os
 
-
 class Measurement(object):
     def __init__(self):
         self.build = ""
@@ -86,6 +85,9 @@ def collect_builds():
         prepare_build_data(build)
 
     return builds
+
+
+
 
 
 def builds_list():
