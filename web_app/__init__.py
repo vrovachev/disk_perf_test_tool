@@ -4,13 +4,14 @@ from flask import Flask, render_template, url_for, request, g, make_response
 from flask_bootstrap import Bootstrap
 from config import TEST_PATH, DATABASE_URI
 from report import build_vertical_bar, build_lines_chart
-from storage_api import builds_list, collect_builds, create_measurement
+# from storage_api import builds_list, collect_builds, create_measurement
 from logging import getLogger, INFO
 
 from flask.ext.sqlalchemy import SQLAlchemy
 import json
 import os.path
 from web_app.keystone import KeystoneAuth
+from web_app.make_data import builds_list, prepare_build_data
 
 app = Flask(__name__)
 db = SQLAlchemy(app)
@@ -120,25 +121,10 @@ def render_test(test_name):
     tests = []
     header_keys = ['build_id', 'iso_md5', 'type', 'date']
     table = [[]]
-    builds = collect_builds()
-
-    l = filter(lambda x: x['name'] == test_name, builds)
-
-    if l[0]['type'] == 'GA':
-        builds = filter(lambda x: x['type'] == 'GA', builds)
-    else:
-        l.extend(filter(lambda x: x['type'] in ['GA', 'master'] and x not in l, builds))
-        builds = l
-
-    results = {}
     meta = {"__meta__": "http://172.16.52.112:8000/api/nodes"}
     data = collect_lab_data(meta)
     lab_meta = total_lab_info(data)
-
-    for build in builds:
-        type = build['type']
-        m = create_measurement(build)
-        results[type] = m
+    results = prepare_build_data(test_name)
 
     bars = build_vertical_bar(results)
     lines = build_lines_chart(results)
@@ -170,15 +156,9 @@ def render_test(test_name):
 
 @app.route("/tests/table/<test_name>/")
 def render_table(test_name):
-    builds = collect_builds()
-    l = filter(lambda x: x['name'] == test_name, builds)
-    if l[0]['type'] == 'GA':
-        builds = filter(lambda x: x['type'] == 'GA', builds)
-    else:
-        l.extend(filter(lambda x: x['type'] in ['GA', 'master'] and x not in l, builds))
-        builds = l
+    builds = prepare_build_data(test_name)
 
-    header_keys = ['build_id', 'iso_md5', 'type' ,'date']
+    header_keys = ['build_id', 'iso_md5', 'type', 'date']
     table = [[]]
     meta = {"__meta__": "http://172.16.52.112:8000/api/nodes"}
     data = collect_lab_data(meta)

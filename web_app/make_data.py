@@ -203,7 +203,6 @@ def builds_list():
     builds = set()
     data = load_all()
 
-
     for item in data:
         build = item[1]
         result = item[0]
