@@ -213,7 +213,7 @@ def create_measurement(data):
 #function preparing data for display plots.
 def prepare_build_data(build_name):
     session = db.session()
-    build = session.query(Build).filter(Build.name == build_name).one()
+    build = session.query(Build).filter(Build.name == build_name).first()
     names = []
 
     if build.type == 'GA':
@@ -257,21 +257,13 @@ def builds_list():
     return res
 
 
-#Function for getting result to display table
-def get_data_for_table(build_name):
-    session = db.session()
-    build = session.query(Build).filter(Build.name == build_name).one()
-    names = []
-
-    if build.type == 'GA':
-        names = [build_name]
-    else:
-        res = session.query(Build).filter(Build.type.in_(['GA', 'master', build_name])).all()
-        for r in res:
-            names.append(r.name)
-
+def get_builds_data(names=None):
     d = collect_builds_from_db()
-    d = {k: v for k, v in d.items() if k in names}
+
+    if not names is None:
+        d = {k: v for k, v in d.items() if k in names}
+    else:
+        d = {k: v for k, v in d.items()}
     output = []
 
     for key, value in d.items():
@@ -297,6 +289,22 @@ def get_data_for_table(build_name):
         process_build_data(build)
 
     return output
+
+
+#Function for getting result to display table
+def get_data_for_table(build_name=""):
+    session = db.session()
+    build = session.query(Build).filter(Build.name == build_name).one()
+    names = []
+
+    if build.type == 'GA':
+        names = [build_name]
+    else:
+        res = session.query(Build).filter(Build.type.in_(['GA', 'master', build_name])).all()
+        for r in res:
+            names.append(r.name)
+
+    return get_builds_data(names)
 
 
 if __name__ == '__main__':

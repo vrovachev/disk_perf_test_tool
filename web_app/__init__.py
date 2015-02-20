@@ -6,7 +6,7 @@ from report import build_vertical_bar, build_lines_chart
 from logging import getLogger, INFO
 from web_app import app
 from web_app.keystone import KeystoneAuth
-from persistance.make_data import builds_list, prepare_build_data, get_data_for_table
+from persistance.make_data import builds_list, prepare_build_data, get_data_for_table, json_to_db, get_builds_data
 from web_app.app import app
 import os.path
 from werkzeug.routing import Rule
@@ -87,6 +87,9 @@ app.url_map.add(Rule('/', endpoint='index'))
 app.url_map.add(Rule('/images/<image_name>', endpoint='get_image'))
 app.url_map.add(Rule('/tests/<test_name>', endpoint='render_test'))
 app.url_map.add(Rule('/tests/table/<test_name>/', endpoint='render_table'))
+app.url_map.add(Rule('/api/tests/<test_name>', endpoint='add_test', methods=['POST']))
+app.url_map.add(Rule('/api/tests', endpoint='get_all_tests'))
+app.url_map.add(Rule('/api/tests/<test_name>', endpoint='get_test'))
 
 
 @app.endpoint('index')
@@ -163,48 +166,22 @@ def render_table(test_name):
                            back_url=url_for('render_test', test_name=test_name), lab=data)
 
 
-# @app.route("/api/tests/<test_name>", methods=['POST'])
-# def add_test(test_name):
-#     test = json.loads(request.data)
-#
-#     file_name = TEST_PATH + '/' + 'storage' + ".json"
-#
-#     if not os.path.exists(file_name):
-#             with open(file_name, "w+") as f:
-#                 f.write(json.dumps([]))
-#
-#     builds = get_data_for_table()
-#     res = None
-#
-#     for b in builds:
-#         if b['name'] == test['name']:
-#             res = b
-#             break
-#
-#     if res is None:
-#         builds.append(test)
-#     else:
-#         merge_builds(res, test)
-#
-#     with open(TEST_PATH + '/' + 'storage' + ".json", 'w+') as f:
-#             f.write(json.dumps(builds))
-#
-#     return "Created", 201
-#
-#
-# @app.route("/api/tests", methods=['GET'])
-# def get_all_tests():
-#     return json.dumps(get_data_for_table())
-#
-#
-# @app.route("/api/tests/<test_name>", methods=['GET'])
-# def get_test(test_name):
-#     builds = get_data_for_table(test_name)
-#
-#     for build in builds:
-#         if build["type"] == test_name:
-#             return json.dumps(build)
-#     return "Not Found", 404
+@app.endpoint('add_test')
+def add_test(test_name):
+    json_to_db(request.data)
+    return "Created", 201
+
+
+@app.endpoint('get_all_tests')
+def get_all_tests():
+    return json.dumps(get_builds_data())
+
+
+@app.endpoint('get_test')
+def get_test(test_name):
+    builds = get_builds_data(test_name)
+
+    return json.dumps(builds)
 
 
 if __name__ == "__main__":
