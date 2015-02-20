@@ -6,7 +6,7 @@ from report import build_vertical_bar, build_lines_chart
 from logging import getLogger, INFO
 from web_app import app
 from web_app.keystone import KeystoneAuth
-from persistance.make_data import builds_list, prepare_build_data, get_data_for_table, json_to_db, get_builds_data
+from persistance.make_data import builds_list, prepare_build_data, get_data_for_table, add_data, get_builds_data
 from web_app.app import app
 import os.path
 from werkzeug.routing import Rule
@@ -120,8 +120,8 @@ def render_test(test_name):
     header_keys = ['build_id', 'iso_md5', 'type', 'date']
     table = [[]]
     meta = {"__meta__": "http://172.16.52.112:8000/api/nodes"}
-    # data = collect_lab_data(meta)
-    lab_meta = {} #total_lab_info(data)
+    data = collect_lab_data(meta)
+    lab_meta = total_lab_info(data)
     results = prepare_build_data(test_name)
 
     bars = build_vertical_bar(results)
@@ -142,7 +142,7 @@ def render_table(test_name):
     header_keys = ['build_id', 'iso_md5', 'type', 'date']
     table = [[]]
     meta = {"__meta__": "http://172.16.52.112:8000/api/nodes"}
-    data = {} #collect_lab_data(meta)
+    data = collect_lab_data(meta)
 
     if len(builds) > 0:
         sorted_keys = sorted(builds[0].keys())
@@ -168,7 +168,7 @@ def render_table(test_name):
 
 @app.endpoint('add_test')
 def add_test(test_name):
-    json_to_db(request.data)
+    add_data(request.data)
     return "Created", 201
 
 

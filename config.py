@@ -1,6 +1,6 @@
 import os
 
-basedir = os.path.abspath(os.path.dirname(__file__))
+basedir = os.environ.get('DATABASE_FOLDER', os.path.abspath(os.path.dirname(__file__)))
 DOCUMENT_ID = "1Xvd0aHA7mr-_b5C3b-sQ66BQsJiOGIT2UesP7kG26oU"
 SHEET_NAME = "aaa"
 WORK_SHEET = "Worksheet"

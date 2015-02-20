@@ -5,6 +5,7 @@ from flask import json
 from sqlalchemy import sql
 from persistance.models import *
 
+
 #class displays measurement. Moved from storage_api_v_1 to avoid circular imports.
 class Measurement(object):
     def __init__(self):
@@ -111,8 +112,8 @@ def add_lab(lab_name):
 
 
 #function store list of builds in database
-def json_to_db(json_data):
-    data = json.loads(json_data)
+def add_data(data):
+    data = json.loads(data)
     session = db.session()
     add_io_params(session)
 
@@ -128,7 +129,6 @@ def json_to_db(json_data):
 
         for params, [bw, dev] in build_data.items():
             param_comb_id = add_param_comb(session, *params.split(" "))
-            print param_comb_id
             result = Result(param_combination_id=param_comb_id, build_id=build_id, bandwith=bw, date=date)
             session.add(result)
             session.commit()
@@ -186,6 +186,7 @@ def collect_builds_from_db(*names):
     return {k: v for k, v in d.items() if k in names}
 
 
+#function creates measurement from data was extracted from database.
 def create_measurement(data):
     build_data = data[0]
 
@@ -211,6 +212,7 @@ def create_measurement(data):
 
 
 #function preparing data for display plots.
+#Format {build_name : Measurement}
 def prepare_build_data(build_name):
     session = db.session()
     build = session.query(Build).filter(Build.name == build_name).first()
@@ -219,7 +221,7 @@ def prepare_build_data(build_name):
     if build.type == 'GA':
         names = [build_name]
     else:
-        res = session.query(Build).filter(Build.type.in_(['GA', 'master', build_name])).all()
+        res = session.query(Build).filter(Build.type.in_(['GA', 'master', build.type])).all()
         for r in res:
             names.append(r.name)
 
@@ -236,6 +238,7 @@ def prepare_build_data(build_name):
 
 
 #function getting list of all builds available to index page
+#returns list of dicts which contains data to display on index page.
 def builds_list():
     res = []
     builds = set()
@@ -257,6 +260,10 @@ def builds_list():
     return res
 
 
+#Processing data from database.
+#List of dicts, where each dict contains build meta info and kev-value measurements.
+#key - param combination.
+#value - [mean, deviation]
 def get_builds_data(names=None):
     d = collect_builds_from_db()
 
@@ -297,13 +304,14 @@ def get_data_for_table(build_name=""):
     build = session.query(Build).filter(Build.name == build_name).one()
     names = []
 
+    #Get names of build that we need.
     if build.type == 'GA':
         names = [build_name]
     else:
-        res = session.query(Build).filter(Build.type.in_(['GA', 'master', build_name])).all()
+        res = session.query(Build).filter(Build.type.in_(['GA', 'master', build.type])).all()
         for r in res:
             names.append(r.name)
-
+    #get data for particular builds.
     return get_builds_data(names)
 
 
@@ -405,10 +413,9 @@ if __name__ == '__main__':
 
     # json_to_db(json_data)
     # print load_data()
-    get_data_for_table('6.1 Dev')
-    load_all()
-    builds_list()
+    add_data(json_data)
+
     print collect_builds_from_db()
     print prepare_build_data('6.1 Dev')
     print builds_list()
-    print get_data_for_table('6.1 Dev')
+    print get_data_for_table('somedev')
