@@ -329,7 +329,10 @@ def run_fio_once(benchmark, fio_path, tmpname, timeout=None):
     if benchmark.use_hight_io_priority:
         cmd_line.append("--prio=0")
 
-    raw_out = subprocess.check_output(cmd_line)
+    cmd = '  '.join(cmd_line)
+    cmd = './' + cmd
+
+    raw_out = subprocess.check_output(cmd, shell=True)
     return json.loads(raw_out)["jobs"][0], " ".join(cmd_line)
 
 
@@ -462,7 +465,7 @@ def parse_args(argv):
         "--iosize", metavar="SIZE", type=type_size_ext,
         help="file size", default=None)
     parser.add_argument(
-        "-s", "--sync", default=False, action="store_true",
+        "-s", "--sync", default=0, action="store_true",
         help="exec sync after each write")
     parser.add_argument(
         "-d", "--direct-io", default=False, action="store_true",
@@ -521,7 +524,9 @@ def main(argv):
 
     benchmark.direct_io = argv_obj.directio
 
-    if argv_obj.sync:
+    if argv_obj.sync == 0:
+        benchmark.sync = False
+    else:
         benchmark.sync = True
 
     test_file_name = argv_obj.test_file
