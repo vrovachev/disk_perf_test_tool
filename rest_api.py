@@ -6,8 +6,6 @@ def add_test(test_name, test_data, url):
     if not url.endswith("/"):
         url += '/api/tests/' + test_name
 
-    import pdb
-    pdb.set_trace()
     requests.post(url=url, data=json.dumps(test_data))
 
 

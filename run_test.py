@@ -61,7 +61,9 @@ def run_io_test(tool,
     obj = obj_cls(script_args,
                   src_testtool_path,
                   None,
-                  keep_temp_files)
+                  keep_temp_files,
+                  tool
+                  )
 
     return test_runner(obj)
 
@@ -137,7 +139,7 @@ def parse_args(argv):
     parser = argparse.ArgumentParser(
         description="Run disk io performance test")
 
-    parser.add_argument("tool_type", help="test tool type",
+    parser.add_argument("--tool_type", help="test tool type",
                         choices=['iozone', 'fio', 'pgbench'])
 
     parser.add_argument("-l", dest='extra_logs',
@@ -317,7 +319,8 @@ def main(argv):
                 res = run_io_test(opts.tool_type,
                                   script_args,
                                   runner,
-                                  opts.keep_temp_files)
+                                  opts.keep_temp_files,
+                                  )
                 logger.debug(format_result(res, get_formatter(opts.tool_type)))
         except:
             traceback.print_exc()

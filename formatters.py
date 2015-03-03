@@ -8,6 +8,8 @@ def get_formatter(test_type):
         return format_io_stat
     elif test_type == "pgbench":
         return format_pgbench_stat
+    elif test_type == "fio":
+        return format_fio
     else:
         raise Exception("Cannot get formatter for type %s" % test_type)
 
@@ -67,7 +69,14 @@ def format_pgbench_stat(res):
         return data
 
 
+# "randread a 1024k": [68683, 8604]
+def format_fio(res):
+    key = res[0]['__meta__']["action"] + " "
+    key += 's ' if res[0]['__meta__']['sync'] else 'a '
+    key += str(res[0]['__meta__']['size'])
 
+    output = {key: [res[0]['bw_mean']]}
+    return json.dumps([output])
 
 
 

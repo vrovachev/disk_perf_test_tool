@@ -109,11 +109,12 @@ class IOPerfTest(IPerfTest):
                  script_opts,
                  testtool_local,
                  on_result_cb,
-                 keep_tmp_files):
+                 keep_tmp_files,
+                 tool):
 
         IPerfTest.__init__(self, on_result_cb)
 
-        dst_testtool_path = '/tmp/io_tool'
+        dst_testtool_path = tool
         self.script_opts = script_opts + ["--binary-path", dst_testtool_path]
         io_py_local = os.path.join(os.path.dirname(io.__file__), "io.py")
         self.io_py_remote = "/tmp/io.py"

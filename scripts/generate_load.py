@@ -20,13 +20,13 @@ HDD_SIZE_KB = 45 * 1000 * 1000
 
 
 def make_load(sizes, opers, sync_types, concurrence, test_file="results.txt",
-              tester_type='iozone', repeat_count=3, iosizes=["4k", "64k", "2m"]):
+              tester_type='iozone', repeat_count=3, iosizes=["64m", "128m", "512m", "1g"]):
 
     iodepth = 1
     for conc in make_list(concurrence):
         for bsize in make_list(sizes):
             for iosize in iosizes:
-                if bsize <= iosize:
+                if ssize_to_kb(bsize) <= ssize_to_kb(iosize):
                     for oper in make_list(opers):
                         # filter out too slow options
                         if bsize in "1k 4k":
