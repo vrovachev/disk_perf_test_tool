@@ -281,8 +281,22 @@ def start_test_vms(opts):
         clear_all(nova)
 
 
+def add_meta_info(result):
+    result[0]["username"] = "admin"
+    result[0]["password"] = "admin"
+    result[0]["tenant_name"] = "admin"
+    result[0]["lab_url"] = "http://172.16.52.112:8000"
+    result[0]["ceph_version"] = "v0.80 Firefly"
+    result[0]["lab_name"] = "Perf-1-Env"
+    result[0]["iso_md5"] = "bla bla"
+    result[0]["build_id"] = "1"
+    result[0]["type"] = "GA"
+    result[0]["date"] = "Thu Feb 12 19:11:56 2015"
+
+
 def main(argv):
     opts = parse_args(argv)
+    results = []
 
     if opts.extra_logs:
         logger.setLevel(logging.DEBUG)
@@ -321,6 +335,7 @@ def main(argv):
                                   runner,
                                   opts.keep_temp_files,
                                   )
+                results.append(res[0])
                 logger.debug(format_result(res, get_formatter(opts.tool_type)))
         except:
             traceback.print_exc()
@@ -368,12 +383,53 @@ def main(argv):
                 logger.debug("Clearing")
 
     if opts.data_server_url:
-        result = json.loads(get_formatter(opts.tool_type)(res))
-        result['name'] = opts.build_name
+        result = json.loads(get_formatter(opts.tool_type)(results))
+        result[0]['name'] = opts.build_name
+        add_meta_info(result)
         add_test(opts.build_name, result, opts.data_server_url)
 
     return 0
 
 
+# command line parametres
+# --tool_type fio  -f scripts/commands.txt -d http://172.16.52.80/ -t io --runner local
 if __name__ == '__main__':
     exit(main(sys.argv[1:]))
+
+# {\
+#         "username": "admin",\
+#         "password": "admin", \
+#         "tenant_name": "admin",\
+#         "lab_url": "http://172.16.52.112:8000",\
+#         "ceph_version": "v0.80 Firefly",\
+#         "lab_name": "Perf-1-Env",\
+#         "iso_md5": "bla bla"\
+#         "build_id": "1",\
+#         "randwrite a 256k": [16885, 1869],\
+#         "randwrite s 4k": [79, 2],\
+#         "read a 64k": [74398, 11618],\
+#         "write s 1024k": [7490, 193],\
+#         "randwrite a 64k": [14167, 4665],\#
+#         "randread a 1024k": [68683, 8604],\
+#         "randwrite s 256k": [3277, 146],\
+#         "write a 1024k": [24069, 660],\
+#         "type": "sometype",\
+#         "write a 64k": [24555, 1006],\
+#         "write s 64k": [1285, 57],\
+#         "write a 256k": [24928, 503],\
+#         "write s 256k": [4029, 192],\
+#         "randwrite a 1024k": [23980, 1897],\
+#         "randread a 64k": [27257, 17268],\
+#         "randwrite s 1024k": [8504, 238],\
+#         "randread a 256k": [60868, 2637],\
+#         "randread a 4k": [3612, 1355],\
+#         "read a 1024k": [71122, 9217],\
+#         "date": "Thu Feb 12 19:11:56 2015",\
+#         "write s 4k": [87, 3],\
+#         "read a 4k": [88367, 6471],\
+#         "read a 256k": [80904, 8930],\
+#         "name": "somedev",\
+#         "randwrite s 1k": [20, 0],\
+#         "randwrite s 64k": [1029, 34],\
+#         "write s 1k": [21, 0],\#
+#     }]'

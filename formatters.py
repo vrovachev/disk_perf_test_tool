@@ -70,12 +70,16 @@ def format_pgbench_stat(res):
 
 
 # "randread a 1024k": [68683, 8604]
-def format_fio(res):
-    key = res[0]['__meta__']["action"] + " "
-    key += 's ' if res[0]['__meta__']['sync'] else 'a '
-    key += str(res[0]['__meta__']['size'])
+def format_fio(results):
+    output = {}
 
-    output = {key: [res[0]['bw_mean']]}
+    for res in results:
+        key = res['__meta__']["action"] + " "
+        key += 's ' if res['__meta__']['sync'] else 'a '
+        key += str(res['__meta__']['size'])
+        # fake value of stdev added to compatobility with storage_api
+        output[key] = [res['bw_mean'], 0]
+
     return json.dumps([output])
 
 

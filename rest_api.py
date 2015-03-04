@@ -4,7 +4,8 @@ import requests
 
 def add_test(test_name, test_data, url):
     if not url.endswith("/"):
-        url += '/api/tests/' + test_name
+        url += '/'
+    url += 'api/tests/' + test_name
 
     requests.post(url=url, data=json.dumps(test_data))
 
