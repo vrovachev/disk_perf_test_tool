@@ -156,6 +156,15 @@ def parse_args(argv):
     # parser.add_argument("-t", "--test-directory", help="directory with test",
     #                     dest="test_directory", required=True)
 
+    parser.add_argument("--tenant", help="tenant name",
+                        dest="tenant", required=True, default="admin")
+
+    parser.add_argument("--username", help="username",
+                        dest="tenant", required=True, default="admin")
+
+    parser.add_argument("--password", help="password",
+                        dest="tenant", required=True, default="admin")
+
     parser.add_argument("-t", "--test", help="test to run",
                         dest="test_directory", required=True,
                         choices=['io', 'pgbench', 'two_scripts'])
@@ -281,10 +290,10 @@ def start_test_vms(opts):
         clear_all(nova)
 
 
-def add_meta_info(result):
-    result[0]["username"] = "admin"
-    result[0]["password"] = "admin"
-    result[0]["tenant_name"] = "admin"
+def add_meta_info(result, opts):
+    result[0]["username"] = opts.username
+    result[0]["password"] = opts.passowrd
+    result[0]["tenant_name"] = opts.tenant
     result[0]["lab_url"] = "http://172.16.52.112:8000"
     result[0]["ceph_version"] = "v0.80 Firefly"
     result[0]["lab_name"] = "Perf-1-Env"
@@ -385,7 +394,7 @@ def main(argv):
     if opts.data_server_url:
         result = json.loads(get_formatter(opts.tool_type)(results))
         result[0]['name'] = opts.build_name
-        add_meta_info(result)
+        add_meta_info(result, opts)
         add_test(opts.build_name, result, opts.data_server_url)
 
     return 0
