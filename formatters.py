@@ -4,7 +4,7 @@ import math
 
 
 def get_formatter(test_type):
-    if test_type == "io":
+    if test_type == "iozone" or test_type == "fio":
         return format_io_stat
     elif test_type == "pgbench":
         return format_pgbench_stat
@@ -62,12 +62,10 @@ def format_pgbench_stat(res):
             sum_res = sum([r[1] for r in results])
             mean = sum_res/len(results)
             sum_sq = sum([(r[1] - mean) ** 2 for r in results])
-            dev = math.sqrt(sum_sq / (len(results) - 1))
+            if len(results) > 1:
+                dev = math.sqrt(sum_sq / (len(results) - 1))
+            else:
+                dev = 0
             data[key] = (mean, dev)
         return data
-
-
-
-
-
 
