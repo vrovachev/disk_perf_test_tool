@@ -51,29 +51,45 @@ logging:
 #         test-vm: system-cpu
 
 # # tests to run
-# tests: #$include(tests.yaml)
-#     # - with_test_nodes:
-#     #     openstack:
-#     #         vm_params:
-#     #             count: x1
-#     #             img_name: disk_io_perf
-#     #             flavor_name: disk_io_perf.256
-#     #             keypair_name: disk_io_perf
-#     #             network_zone_name: novanetwork
-#     #             flt_ip_pool: nova
-#     #             creds: "ssh://ubuntu@{0}::disk_io_perf.pem"
-#     #     tests:
-#             # - pgbench:
-#             #     opts:
-#             #         num_clients: [4, 8, 12]
-#             #         transactions: [1, 2, 3]
+tests: # $include(tests.yaml)
+      start_test_nodes:
+         openstack:
+             vm_params:
+                 count: x1
+                 img_name: disk_io_perf
+                 flavor_name: disk_io_perf.256
+                 keypair_name: disk_io_perf
+                 network_zone_name: novanetwork
+                 flt_ip_pool: nova
+                 creds: "ssh://ubuntu@172.16.52.112::disk_io_perf.pem"
+         tests:
+             - pgbench:
+                  opts:
+                      num_clients: [4, 8, 12]
+                      transactions: [1, 2, 3]
+
+      with_test_nodes:
+         openstack:
+             vm_params:
+                 count: x1
+                 img_name: disk_io_perf
+                 flavor_name: disk_io_perf.256
+                 keypair_name: disk_io_perf
+                 network_zone_name: novanetwork
+                 flt_ip_pool: nova
+                 creds: "ssh://ubuntu@{0}::disk_io_perf.pem"
+         tests:
+             - pgbench:
+                  opts:
+                      num_clients: [4, 8, 12]
+                      transactions: [1, 2, 3]
 #     - io: tests/io_task_test.cfg
 
-#             # - vm_count: 
-#             #     max_lat_ms: 20
-#             #     min_bw_mbps: 60
-#             #     min_4k_direct_w_iops: 100
-#             #     min_4k_direct_r_iops: 100
+             # - vm_count:
+             #     max_lat_ms: 20
+             #     min_bw_mbps: 60
+             #     min_4k_direct_w_iops: 100
+             #     min_4k_direct_r_iops: 100
 
 # # where to store results
 # # results:
@@ -86,3 +102,37 @@ logging:
 #     CHARTS_IMG_PATH: "static/images"
 #     SQLALCHEMY_MIGRATE_REPO: "/home/gstepanov/rally-results-processor/db_repository"
 #     DATABASE_URI: 'sqlite:////home/gstepanov/rally-results-processor/app.db?check_same_thread=False'
+
+
+#tests: # $include(tests.yaml)
+#     start_test_nodes:
+#         openstack:
+#             vm_params:
+#                 count: x1
+#                 img_name: disk_io_perf
+#                 flavor_name: disk_io_perf.256
+#                 keypair_name: disk_io_perf
+#                 network_zone_name: novanetwork
+#                 flt_ip_pool: nova
+#                 creds: "ssh://ubuntu@172.16.52.112::disk_io_perf.pem"
+#         tests:
+#             - pgbench:
+#                  opts:
+#                      num_clients: [4, 8, 12]
+#                      transactions: [1, 2, 3]
+#
+#     with_test_nodes:
+#         openstack:
+#             vm_params:
+#                 count: x1
+#                 img_name: disk_io_perf
+#                 flavor_name: disk_io_perf.256
+#                 keypair_name: disk_io_perf
+#                 network_zone_name: novanetwork
+#                 flt_ip_pool: nova
+#                 creds: "ssh://ubuntu@{0}::disk_io_perf.pem"
+#         tests:
+#             - pgbench:
+#                  opts:
+#                      num_clients: [4, 8, 12]
+#                      transactions: [1, 2, 3]

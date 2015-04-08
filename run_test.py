@@ -97,29 +97,30 @@ def run_tests(config, nodes):
     res_q = Queue.Queue()
 
     for test in config['tests']:
-        for name, params in test.items():
-            logger.info("Starting {0} tests".format(name))
+        for test in config['tests'][test]['tests']:
+            for name, params in test.items():
+                logger.info("Starting {0} tests".format(name))
 
-            threads = []
-            barrier = utils.Barrier(len(test_nodes))
-            for node in test_nodes:
-                msg = "Starting {0} test on {1} node"
-                logger.debug(msg.format(name, node.conn_url))
-                test = tool_type_mapper[name](params, res_q.put)
-                th = threading.Thread(None, test_thread, None,
-                                      (test, node, barrier))
-                threads.append(th)
-                th.daemon = True
-                th.start()
+                threads = []
+                barrier = utils.Barrier(len(test_nodes))
+                for node in test_nodes:
+                    msg = "Starting {0} test on {1} node"
+                    logger.debug(msg.format(name, node.conn_url))
+                    test = tool_type_mapper[name](params, res_q.put)
+                    th = threading.Thread(None, test_thread, None,
+                                          (test, node, barrier))
+                    threads.append(th)
+                    th.daemon = True
+                    th.start()
 
-            for th in threads:
-                th.join()
+                for th in threads:
+                    th.join()
 
-            results = []
-            while not res_q.empty():
-                results.append(res_q.get())
-                # logger.info("Get test result {0!r}".format(results[-1]))
-            yield name, results
+                results = []
+                while not res_q.empty():
+                    results.append(res_q.get())
+                    # logger.info("Get test result {0!r}".format(results[-1]))
+                yield name, results
 
 
 def parse_args(argv):
@@ -210,14 +211,20 @@ def remove_sensors_stage(cfg, ctx):
 def run_tests_stage(cfg, ctx):
     ctx.results = []
 
+    if 'start_test_nodes' in cfg['tests']:
+        params = cfg['tests']['start_test_nodes']['openstack']
+    for new_node in start_vms.launch_vms(params):
+        new_node.roles.append('testnode')
+        ctx.nodes.append(new_node)
+
+    # if 'start_test_nodes' in cfg['tests']:
+    #     params = cfg['tests']['start_test_nodes']['openstack']
+    # for new_node in start_vms.launch_vms(params):
+    #     new_node.roles.append('testnode')
+    #     ctx.nodes.append(new_node)
+
     if 'tests' in cfg:
         ctx.results.extend(run_tests(cfg_dict, ctx.nodes))
-
-    # if 'start_test_nodes' in opts.stages:
-    #     params = cfg_dict['start_test_nodes']['openstack']
-    #     for new_node in start_vms.launch_vms(params):
-    #         new_node.roles.append('testnode')
-    #         nodes.append(new_node)
 
 
 def disconnect_stage(cfg, ctx):
