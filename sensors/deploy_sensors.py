@@ -5,7 +5,7 @@ import logging
 
 from concurrent.futures import ThreadPoolExecutor, wait
 
-from disk_perf_test_tool.ssh_utils import connect, copy_paths
+from ssh_utils import connect, copy_paths
 
 logger = logging.getLogger('io-perf-tool')
 

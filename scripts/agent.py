@@ -2,12 +2,13 @@ import argparse
 import subprocess
 import sys
 import socket
-import fcntl
 import struct
 import array
+import fcntl
+from sensors.protocol import create_protocol
 
 
-def all_interfaces():
+def get_all_interfaces():
     max_possible = 128  # arbitrary. raise if needed.
     bytes = max_possible * 32
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -33,8 +34,24 @@ def format_ip(addr):
         str(ord(addr[3]))
 
 
+def get_ip_by_interface(interface_name):
+    interfaces = get_all_interfaces()
+
+    for iface in interfaces:
+        if iface[0] == interface_name:
+            return format_ip(iface[1])
+
+
+def forward_udp(dest, sources):
+    sources = [create_protocol(source, receiver=True) for source in sources]
+    sender = create_protocol(dest)
+
+    while True:
+        [sender.send(source.recv(1)) for source in sources]
+
+
 def find_interface_by_ip(ext_ip):
-    ifs = all_interfaces()
+    ifs = get_all_interfaces()
     for i in ifs:
         ip = format_ip(i[1])
 
@@ -93,6 +110,9 @@ def parse_command_line(argv):
         "--clean", type=bool, default=False)
 
     parser.add_argument(
+        "--udp_url", type=str   , default=False)
+
+    parser.add_argument(
         "--ports", type=str, nargs='+')
 
     return parser.parse_args(argv)
@@ -108,6 +128,10 @@ def main(argv):
     if arg_object.clean is False:
         for k in mapping:
             print k + " " + str(mapping[k])
+
+    ips = [mapping[k] for k in mapping]
+    urls = ['udp://' + ip + ':5669' for ip in ips]
+    forward_udp(arg_object.udp_url, urls)
 
 
 if __name__ == "__main__":
