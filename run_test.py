@@ -11,7 +11,6 @@ import yaml
 from concurrent.futures import ThreadPoolExecutor
 
 import utils
-import report
 import ssh_utils
 import start_vms
 import pretty_yaml
@@ -292,10 +291,10 @@ def run_all_test(cfg, ctx):
 
         elif os_creds == 'clouds':
             os_cfg = cfg['clouds']['openstack']
-            tenant = os_cfg['OS_TENANT_NAME'].strip()
-            user = os_cfg['OS_USERNAME'].strip()
-            passwd = os_cfg['OS_PASSWORD'].strip()
-            auth_url = os_cfg['OS_AUTH_URL'].strip()
+            tenant = os_cfg['tenant_name'].strip()
+            user = os_cfg['username'].strip()
+            passwd = os_cfg['password'].strip()
+            auth_url = os_cfg['os_auth_url'].strip()
 
         elif os_creds == 'ENV':
             tenant = None

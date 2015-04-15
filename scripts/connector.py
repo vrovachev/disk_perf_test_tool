@@ -70,16 +70,30 @@ def discover_fuel_nodes_clean(fuel_url, ssh_creds, nodes, base_port=12345):
         print line
 
 
+def send_all_files(sftp, path):
+    files = [f for f in os.listdir(path) if
+                  os.path.isfile(os.path.join(path, f))]
+
+    files = filter(lambda path: path.endswith('.py'), files)
+    for f in files: 
+        sftp.put(os.path.join(path, f),
+             os.path.join("/tmp/sensors/", f))
+
+
 def run_agent(ip_addresses, roles, host, tmp_name, password="test37", port=22,
               base_port=12345):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostname=host, port=port, password=password, username="root")
     sftp = ssh.open_sftp()
+    ssh.exec_command('mkdir /tmp/sensors')
     sftp.put(os.path.join(os.path.dirname(__file__), 'agent.py'),
              "/tmp/agent.py")
-    sftp.put(os.path.join(os.path.dirname(__file__), 'api.py'),
-             "/tmp/api.py")
+    sensors_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                               'sensors')
+    send_all_files(sftp, sensors_dir)
+
+
     fuel_id_rsa_path = tmp_name
     sftp.get('/root/.ssh/id_rsa', fuel_id_rsa_path)
     os.chmod(fuel_id_rsa_path, 0o700)

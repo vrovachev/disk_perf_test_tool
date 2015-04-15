@@ -5,7 +5,9 @@ import socket
 import struct
 import array
 import fcntl
-from sensors.protocol import create_protocol
+import threading
+import traceback
+from sensors.protocol import create_protocol, Timeout
 
 
 def get_all_interfaces():
@@ -47,7 +49,10 @@ def forward_udp(dest, sources):
     sender = create_protocol(dest)
 
     while True:
-        [sender.send(source.recv(1)) for source in sources]
+        try:
+            [sender.send(source.recv(1000)) for source in sources]
+        except Timeout:
+            traceback.print_exc()
 
 
 def find_interface_by_ip(ext_ip):
@@ -130,8 +135,11 @@ def main(argv):
             print k + " " + str(mapping[k])
 
     ips = [mapping[k] for k in mapping]
-    urls = ['udp://' + ip + ':5669' for ip in ips]
-    forward_udp(arg_object.udp_url, urls)
+    urls = ['udp://' + str(ip) + ':5669' for ip in ips]
+    th = threading.Thread(target=forward_udp,
+                          args=(arg_object.udp_url, urls))
+    th.daemon = True
+    th.start()
 
 
 if __name__ == "__main__":

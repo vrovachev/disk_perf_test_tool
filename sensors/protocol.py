@@ -25,7 +25,7 @@ class ISensortResultsSerializer(object):
 
 class PickleSerializer(ISensortResultsSerializer):
     def pack(self, data):
-        ndata = {key: val.value for key, val in data.items()}
+        ndata = dict((key, value) for (key, value) in data.items())
         return pickle.dumps(ndata)
 
     def unpack(self, data):
@@ -99,8 +99,8 @@ class StdoutTransport(ITransport):
             vals = [data[header].value - self.prev.get(header, 0)
                     for header in self.headers]
 
-            self.prev.update({header: data[header].value
-                              for header in self.headers})
+            self.prev.update(dict((header, data[header].value)
+                                  for header in self.headers))
         else:
             vals = [data[header].value for header in self.headers]
 
