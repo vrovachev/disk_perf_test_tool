@@ -87,3 +87,17 @@ def get_osds_ips(executor, osd_list):
         ip = json.loads(out)["ip"]
         ips.add(str(ip.split(":")[0]))
     return ips
+
+
+def get_ceph_disks(executor):
+    """ Return list of disks,
+        which connected with ceph"""
+    disk_list = executor("ceph-disk list").split("\n")
+    ceph_disks = []
+    for item in disk_list:
+        dev, dtype = item.split()[0:2]
+        if "ceph" in dtype:
+            _, _, dev_name = dev.partition("/dev/")
+            ceph_disks.append(dev_name)
+
+    return ceph_disks

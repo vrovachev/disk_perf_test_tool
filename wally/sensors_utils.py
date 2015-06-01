@@ -10,6 +10,22 @@ from wally.sensors.api import (with_sensors, sensors_info, SensorConfig)
 
 logger = logging.getLogger("wally.sensors")
 
+from wally.discover.ceph import ssh_execute, get_ceph_disks
+def ceph_disk_list(ssh):
+    return get_ceph_disks(ssh_execute(ssh))
+
+
+def check_for_custom_configs(sensors_configs, ssh):
+    """ Add additional parameters for custom sensors """
+    custom_sensor_map = {"ceph-io": {"allowed_prefixes": ceph_disk_list(ssh)}}
+    new_conf = {}
+    for sensor in sensors_configs.keys():
+        if sensor in custom_sensor_map:
+            new_conf[sensor] = custom_sensor_map[sensor]
+        else:
+            new_conf[sensor] = sensors_configs[sensor]
+    return new_conf
+
 
 def get_sensors_config_for_nodes(cfg, nodes, remote_path):
     monitored_nodes = []
@@ -27,9 +43,10 @@ def get_sensors_config_for_nodes(cfg, nodes, remote_path):
             if role in node.roles:
                 source2roles_map[node.get_conn_id()] = node.roles
                 monitored_nodes.append(node)
+                custom_cfg = check_for_custom_configs(collect_cfg, node.connection)
                 sens_cfg = SensorConfig(node.connection,
                                         node.get_conn_id(),
-                                        collect_cfg,
+                                        custom_cfg,
                                         source_id=node.get_conn_id(),
                                         monitor_url=receiver_url)
                 sensors_configs.append(sens_cfg)
