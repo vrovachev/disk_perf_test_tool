@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 from collections import namedtuple
 
@@ -17,6 +18,10 @@ def is_dev_accepted(name, disallowed_prefixes, allowed_prefixes):
                      for prefix in allowed_prefixes)
 
     return dev_ok
+
+
+def execute(cmd):
+    return subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
 
 
 def get_pid_list(disallowed_prefixes, allowed_prefixes):
