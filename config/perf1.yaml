@@ -1,0 +1,44 @@
+include: default.yaml
+
+clouds:
+    fuel:
+        url: http://172.16.52.114:8000/
+        creds: admin:admin@admin
+        ssh_creds: root:test37
+        openstack_env: "test"
+
+#    openstack:
+#        vms:
+#          - "ubuntu@wally-unstentoriously_ean"
+
+discover: fuel_openrc_only
+
+# explicit_nodes:
+#     "ssh://root@localhost:2244": testnode
+
+tests:
+   - start_test_nodes:
+         openstack:
+             count: =1
+             cfg_name: wally_1024
+             network_zone_name: net04
+             flt_ip_pool: net04_ext
+
+         tests:
+           - io:
+                 cfg: ceph_test
+                 params:
+                     # FILENAME: /dev/vdb
+                     FILENAME: /dev/vdb
+                     # FILENAME: /var/lib/nova/test.bin
+                     # FILENAME: /dev/cinder/volume-46e5c95d-cd85-451a-88db-53a958111182
+                     # TEST_FILE_SIZE: 250G
+                     TEST_FILE_SIZE: 90G
+  # - io:
+  #       cfg: cinder_iscsi
+  #       params:
+  #           # FILENAME: /dev/vdb
+  #           # FILENAME: /opt/test.bin
+  #           # FILENAME: /var/lib/nova/test.bin
+  #           FILENAME: /dev/cinder/volume-46e5c95d-cd85-451a-88db-53a958111182
+  #           TEST_FILE_SIZE: 250G

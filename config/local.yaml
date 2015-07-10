@@ -1,0 +1,15 @@
+include: default.yaml
+
+explicit_nodes:
+    local: testnode
+    # "ssh://localhost::/home/koder/.ssh/id_rsa": testnode
+
+tests:
+    - io:
+        cfg: ceph_test
+        use_sudo: false
+        params:
+            #FILENAME: /media/vms/test.bin
+            # FILENAME: /media/data/test.bin
+            FILENAME: /dev/nbd0
+            TEST_FILE_SIZE: 20G

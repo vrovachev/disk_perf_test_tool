@@ -1,0 +1,49 @@
+include: default.yaml
+
+clouds:
+    fuel:
+        url: http://172.16.52.114:8000/
+        creds: admin:admin@admin
+        ssh_creds: root:test37
+        openstack_env: test
+
+    # openstack:
+    #    vms:
+    #      - "ubuntu@wally-characterizable-kolby"
+
+discover: fuel_openrc_only
+
+# explicit_nodes:
+#    "ssh://root@localhost:7777:/home/koder/.ssh/fuel_master_ceph_rsa": testnode
+
+# sensors:
+#     roles_mapping:
+#         testnode: system-cpu, block-io, net-io
+#         # ceph-osd: system-cpu, block-io, net-io
+#         # cinder: system-cpu, block-io, net-io
+#         compute: system-cpu, block-io, net-io
+
+tests:
+    - start_test_nodes:
+        openstack:
+            count: =2
+            cfg_name: wally_1024
+            network_zone_name: net04
+            flt_ip_pool: net04_ext
+
+        tests:
+            - io:
+                cfg: ceph_test
+                params:
+                    FILENAME: /dev/vdb
+                    TEST_FILE_SIZE: 100G
+
+    # - io:
+    #     node_limit: 1
+    #     cfg: hdd
+    #     test_logging: true
+    #     prefill_files: false
+    #     params:
+    #         FILENAME: /var/lib/nova/instances/b9fa1a9f-7d43-4cc6-b6cc-133c2a84ab41/xxx.bin
+    #         NUM_ROUNDS: 3
+    #         TEST_FILE_SIZE: 180G

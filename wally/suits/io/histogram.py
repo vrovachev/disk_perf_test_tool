@@ -4,7 +4,7 @@ from os.path import isfile, join
 from wally.suits.io.fio import load_fio_log_file
 
 
-def make_histogram(dir_path, total_time, iops=True, skip_range=5):
+def make_histogram(dir_path, total_time, iops=True, skip_range=1):
     """
         @dir_path - path to dir with fio log files
         @total_time - time how log fio tests were proceed
@@ -26,14 +26,12 @@ def make_histogram(dir_path, total_time, iops=True, skip_range=5):
     begins = {}
     ends = {}
     values = {}
-
     #read all data from all files and put to the same array intervals.
     for f in files:
         series = load_fio_log_file(f)
 
         for begin, lenght, value in series.data:
             end = begin + lenght
-
             if end >= total_time * (100 - skip_range) / 100.0:
                 end = total_time * (100 - skip_range) / 100.0
 
@@ -46,6 +44,7 @@ def make_histogram(dir_path, total_time, iops=True, skip_range=5):
 
     #sort key points by the time. begin of interval always goes before end.
     intervals = sorted(intervals)
+    interval2 = filter(lambda x: x[0] == 119.965, intervals)
     current = 0
     i = 0
     hist = []
