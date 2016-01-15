@@ -22,6 +22,7 @@ from wally.discover import discover, Node
 from wally import pretty_yaml, utils, report, ssh_utils, start_vms
 from wally.sensors_utils import with_sensors_util, sensors_info_util
 
+from wally.suits.omgbench import report as omgbench_report
 from wally.suits.mysql import MysqlTest
 from wally.suits.itest import TestConfig
 from wally.suits.io.fio import IOPerfTest
@@ -34,6 +35,9 @@ TOOL_TYPE_MAPPER = {
     "pgbench": PgBenchTest,
     "mysql": MysqlTest,
     "omg": OmgTest,
+    "pika": OmgTest,
+    "zmq": OmgTest,
+    "rabbit": OmgTest,
 }
 
 
@@ -171,16 +175,18 @@ def run_tests(cfg, test_block, nodes):
     """
     Run test from test block
     """
-    test_nodes = [node for node in nodes if 'testnode' in node.roles]
-    not_test_nodes = [node for node in nodes if 'testnode' not in node.roles]
-
-    if len(test_nodes) == 0:
-        logger.error("No test nodes found")
-        return
-
     for name, params in test_block.items():
         results = []
 
+        testnode = params.get('testnode', 'testnode')
+
+        test_nodes = [node for node in nodes if testnode in node.roles]
+        not_test_nodes = [node for node in nodes if testnode not in
+                          node.roles]
+
+        if len(test_nodes) == 0:
+            logger.error("No test nodes found")
+            return
         # iterate over all node counts
         limit = params.get('node_limit', len(test_nodes))
         if isinstance(limit, (int, long)):
@@ -438,7 +444,6 @@ def create_vms_ctx(ctx, cfg, config, already_has_count=0):
 
 def run_tests_stage(cfg, ctx):
     ctx.results = collections.defaultdict(lambda: [])
-
     for group in cfg.get('tests', []):
 
         if len(group.items()) != 1:
@@ -542,7 +547,7 @@ def console_report_stage(cfg, ctx):
                 rep = "\n\n".join(rep_lst)
             elif tp in ['mysql', 'pgbench'] and data is not None:
                 rep = MysqlTest.format_for_console(data)
-            elif tp == 'omg':
+            elif tp in ['omg', 'pika', 'rabbit', 'zmq']:
                 rep = OmgTest.format_for_console(data)
             else:
                 logger.warning("Can't generate text report for " + tp)
@@ -587,6 +592,8 @@ def html_report_stage(cfg, ctx):
                                   cfg.get('comment', ''),
                                   html_rep_fname,
                                   lab_info=ctx.hw_info)
+        if tp in ['omg', 'pika', 'rabbit', 'zmq'] and data is not None:
+            omgbench_report.make_report(cfg, html_rep_fname)
 
 
 def load_data_from_path(test_res_dir):
@@ -598,7 +605,8 @@ def load_data_from_path(test_res_dir):
         for tests in test_lists:
             for suite_name, suite_data in tests.items():
                 result_folder = suite_data[0]
-                res[tp].append(TOOL_TYPE_MAPPER[tp].load(suite_name, result_folder))
+                res[tp].append(TOOL_TYPE_MAPPER[tp].load(suite_name,
+                                                         result_folder))
 
     return res
 

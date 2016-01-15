@@ -213,7 +213,6 @@ class ThreadedTest(PerfTest):
     def run(self):
         barrier = Barrier(len(self.config.nodes))
         th_test_func = functools.partial(self.th_test_func, barrier)
-
         with ThreadPoolExecutor(len(self.config.nodes)) as pool:
             return list(pool.map(th_test_func, self.config.nodes))
 
@@ -260,6 +259,9 @@ class ThreadedTest(PerfTest):
 
 
 class TwoScriptTest(ThreadedTest):
+
+    test_res_class = TestResults
+
     def __init__(self, *dt, **mp):
         ThreadedTest.__init__(self, *dt, **mp)
         self.remote_dir = '/tmp'
@@ -290,4 +292,4 @@ class TwoScriptTest(ThreadedTest):
         t1 = time.time()
         res = run_on_node(node)(cmd, timeout=self.run_tout)
         t2 = time.time()
-        return TestResults(self.config, None, res, (t1, t2))
+        return self.test_res_class(self.config, None, res, (t1, t2))

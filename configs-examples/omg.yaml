@@ -1,19 +1,33 @@
 include: default.yaml
 
 clouds:
-    omg: local
+    fuel:
+        url: http://10.20.0.2:8000/
 
-explicit_nodes:
-    "ssh://root@host::/root/.ssh/id_rsa.pub": testnode
-    "ssh://root@host2::/root/.ssh/id_rsa.pub": testnode
+        # fuel UI creds
+        creds: admin:admin@admin
+
+        # fuel master ssh passwd
+        ssh_creds: root:r00tme
+
+        # openstack environment
+        openstack_env: name
+discover: fuel
 
 tests:
-    - omg:
+    - rabbit:
         prerun_script: "wally/suits/omgbench/prepare.sh"
         run_script: "wally/suits/omgbench/run.sh"
-        run_opts: "times 40 timeout 60 url rabbit://guest:guest@localhost concurrency 40"
+        run_opts: "num_topics 5 servers 10 timeout 30 url rabbit://guest:guest@10.20.0.5 clients 20"
+        testnode: compute
+    - pika:
+        prerun_script: "wally/suits/omgbench/prepare.sh"
+        run_script: "wally/suits/omgbench/run.sh"
+        run_opts: "num_topics 5 servers 10 timeout 30 url pika://guest:guest@10.20.0.5 clients 20"
+        testnode: compute
 
-sensors:    
+sensors:
     roles_mapping:
-        testnode: system-cpu, block-io, net-io
+        compute: system-cpu,block-io,net-io
+        controller: system-cpu,block-io,net-io
     sensors_remote_path: /tmp/sensors

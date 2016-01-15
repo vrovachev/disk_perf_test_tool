@@ -1,8 +1,5 @@
 #!/bin/bash
 
-set -e
-
-
 while [[ $# > 1 ]]
 do
 key="$1"
@@ -16,12 +13,16 @@ case $key in
     TIMEOUT="$2"
     shift
     ;;
-    concurrency)
-    CONC="$2"
+    clients)
+    CLIENTS="$2"
     shift
     ;;
-    times)
-    TIMES="$2"
+    servers)
+    SERVERS="$2"
+    shift
+    ;;
+    num_topics)
+    NUM_TOPICS="$2"
     shift
     ;;
     *)
@@ -32,21 +33,38 @@ esac
 shift
 done
 
-OMGPATN=/tmp
 
-cd "$OMGPATN"
-source venv/bin/activate
+OMGPATH=/tmp
+mkdir -p "/tmp/testlogs"
+SERVER_LOG_FILE=/tmp/testlogs/server-
+CLIENT_LOG_FILE=/tmp/testlogs/client
 
-cd omgbenchmark/rally_plugin
+cd "$OMGPATH/oslo.messaging/tools"
+source "$OMGPATH/venv/bin/activate"
 
-sed -i -e "s+rabbit:\/\/guest:guest@localhost\/+$URL+g" deployment.json
-sed -i -e "s,timeout\": 100,timeout\": $TIMEOUT,g" task_timeout.json
-sed -i -e "s,concurrency\": 40,concurrency\": $CONC,g" task_timeout.json
-sed -i -e "s,times\": 40,times\": $TIMES,g" task_timeout.json
+topics=`python -c "import petname; print ' '.join([petname.Generate(3, '_') for i in range($NUM_TOPICS)])"`
+topics_arr=($topics)
 
-rally --plugin-paths . deployment create --file=deployment.json --name=test &> /dev/null
-rally --plugin-paths . task start task_timeout.json &> ~/omg.log
+for i in `seq "$SERVERS"`;
+ do
+ python simulator.py --url "$URL" -tp "${topics_arr[$((i % NUM_TOPICS))]}" -l $((TIMEOUT + 5)) rpc-server &> "$SERVER_LOG_FILE$i" &
+ done
 
-cat ~/omg.log | grep  "Messages count" | grep -o '[0-9,.]\+' | tail -1
-cat ~/omg.log | grep  "total" | grep -o '[0-9,.]\+%' | grep -o '[0-9,.]\+'
-cat ~/omg.log | grep  "Load duration" | grep -o '[0-9,.]\+'
+python simulator.py  -l "$TIMEOUT" -tp $topics --url "$URL" rpc-client -p "$CLIENTS" -m 100 &> "$CLIENT_LOG_FILE" &
+
+wait
+
+while `ps aux | grep simulator.py | grep -v grep`
+do
+sleep 1
+done
+
+# grep total sent
+
+cat /tmp/testlogs/client | grep "messages were sent" |  grep -o '[0-9,.]\+' | head -2
+
+# grep total received
+for i in `seq "$SERVERS"`;
+ do
+ cat "$SERVER_LOG_FILE$i" | grep "Received total" | grep -o '[0-9,.]\+';
+ done
