@@ -178,11 +178,12 @@ def run_tests(cfg, test_block, nodes):
     for name, params in test_block.items():
         results = []
 
-        testnode = params.get('testnode', 'testnode')
+        testnodes = params.get('testnodes', ['testnode'])
 
-        test_nodes = [node for node in nodes if testnode in node.roles]
-        not_test_nodes = [node for node in nodes if testnode not in
-                          node.roles]
+        test_nodes = [node for node in nodes if 
+                      set.intersection(set(testnodes), set(node.roles))]
+
+        not_test_nodes = [node for node in nodes if node not in test_nodes]
 
         if len(test_nodes) == 0:
             logger.error("No test nodes found")
@@ -559,7 +560,7 @@ def console_report_stage(cfg, ctx):
             if first_report:
                 logger.info("Text report were stored in " + text_rep_fname)
                 first_report = False
-
+            print("Test results for %s" % tp)
             print("\n" + rep + "\n")
 
 
@@ -593,7 +594,8 @@ def html_report_stage(cfg, ctx):
                                   html_rep_fname,
                                   lab_info=ctx.hw_info)
         if tp in ['omg', 'pika', 'rabbit', 'zmq'] and data is not None:
-            omgbench_report.make_report(cfg, html_rep_fname)
+            omgbench_report.make_report(cfg.results_dir, cfg.sensor_storage,
+                                        html_rep_fname)
 
 
 def load_data_from_path(test_res_dir):

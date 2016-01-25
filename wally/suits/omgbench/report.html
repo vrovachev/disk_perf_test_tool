@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Omgbench Report</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+</head>
+<body>
+<div class="page-header text-center">
+    <h2>Omgbench Report</h2>
+</div>
+<h3>Test results</h3>
+<table class="table table-hover">
+    <thead>
+    <tr>
+        <th>Test name</th>
+        <th>Duration</th>
+        <th>Received</th>
+        <th>Sent</th>
+        <th>Success</th>
+        <th>Bandwidth</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for result in results %}
+    <tr>
+        <td>{{ result['name'] }}</td>
+        <td>{{ result['duration'] }}</td>
+        <td>{{ result['received'] }}</td>
+        <td>{{ result['sent'] }}</td>
+        <td>{{ result['success'] }}&nbsp;&#37;</td>
+        <td>{{ result['bandwidth'] }}&nbsp;msg&#47;s</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<h3>Sensors data</h3>
+
+<div class="panel-group" id="accordion" role="tablist"
+     aria-multiselectable="true">
+    <div class="panel panel-default">
+        {% for node, sensors in nodes.items() %}
+        <div class="panel-heading" role="tab" id="heading-{{ node.replace('.domain.tld', '') }}">
+            <h4 class="panel-title">
+                <a role="button" data-toggle="collapse"
+                   data-parent="#accordion" href="#collapse-{{ node.replace('.domain.tld', '') }}"
+                   aria-expanded="true" aria-controls="collapse-{{ node.replace('.domain.tld', '') }}">
+                    {{ node }}
+                </a>
+            </h4>
+        </div>
+        <div id="collapse-{{ node.replace('.domain.tld', '') }}"
+             class="panel-collapse collapse in"
+             role="tabpanel"
+             aria-labelledby="heading-{{ node.replace('.domain.tld', '') }}">
+            <div class="panel-body">
+                <div class="container">
+                <div class="row">
+                    {% for test_name, sens_data in sensors.items() %}
+                    <div class="col-md-{{ span_size }}">
+                        {% for plot in sens_data.values() %}
+                        <div><img src='{{ plot }}'></div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>

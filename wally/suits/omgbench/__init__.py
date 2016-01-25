@@ -45,12 +45,17 @@ class OmgTest(TwoScriptTest):
 
     @classmethod
     def format_for_console(cls, data):
-        for res in data[0]:
-            res_list = res.raw_result.strip().split('\n')
-            sent = float(res_list[0])
-            duration = int(res_list[1])
-            received = sum([int(r) for r in res_list[2:]])
+        sent = 0
+        received = 0
+        duration = [] 
+        for node_res in data:
+            for res in node_res:
+                res_list = res.raw_result.strip().split('\n')
+                sent += float(res_list[0])
+                duration.append(int(res_list[1]))
+                received += sum([int(r) for r in res_list[2:]])
 
+        duration = max(duration)
         totalms = int(received / duration)
         sucess = int((received / sent) * 100)
         tab = texttable.Texttable(max_width=120)
