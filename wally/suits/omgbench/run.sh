@@ -64,15 +64,10 @@ host=`ip a | grep 10.20 | awk '{print $2}' | sed 's/\//\ /g' | awk '{print $1}'`
 if [[ "$START_BROKER" ]]
 then
     cat > /tmp/zmq.conf <<EOF
-[DEFAULT]
-rpc_backend=zmq
-rpc_zmq_matchmaker=redis
 [matchmaker_redis]
-port=${ZMQ_PORT:-6379}
-host=${ZMQ_HOST:-localhost}
-password=${ZMQ_PASS:-''}
+sentinel_hosts=192.168.0.5:26379,192.168.0.3:26379,192.168.0.8:26379
 EOF
-    oslo-messaging-zmq-broker --config-file /tmp/zmq.conf &> /tmp/broker.log
+    oslo-messaging-zmq-broker --config-file /tmp/zmq.conf &> /tmp/broker.log &
     CONF_FILE_OPT="--config-file /tmp/zmq.conf"
 fi
 
@@ -81,7 +76,12 @@ seq_topics=`seq "$NUM_TOPICS"`
 topics=`for i in $seq_topics; do echo "becnhmark_topic_$i"; done`
 topics_arr=($topics)
 
-hostname=`hostname`
+servers=`cat /etc/hosts | grep node- | awk '{print $3}'`
+servers_arr=($servers)
+IFS=,
+targets=`eval echo {"${topics_arr[*]}"}.{"${servers_arr[*]}"}`
+unset IFS
+hostname=`hostname -s`
 # start servers
 for i in `seq "$SERVERS"`;
  do
@@ -95,7 +95,7 @@ sleep 1
 done
 
 # start client
-python simulator.py $CONF_FILE_OPT -d True -l "$TIMEOUT" -tp $topics -s $hostname --url "$URL" rpc-client -p "$CLIENTS" -m 100 &> "$CLIENT_LOG_FILE" &
+python simulator.py $CONF_FILE_OPT -d True -l "$TIMEOUT" -tg $targets --url "$URL" rpc-client -p "$CLIENTS" -m 100 &> "$CLIENT_LOG_FILE" &
 
 # wait for all simulator processes to finish
 while [ "$(ps aux | grep simulator.py | grep -v grep)" ]
