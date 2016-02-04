@@ -15,6 +15,7 @@ mkdir venv
 cd venv
 virtualenv .
 
+cd /tmp
 git clone http://github.com/openstack/oslo.messaging
 source venv/bin/activate
 apt-get -y install python-scipy libblas-dev liblapack-dev libatlas-base-dev gfortran
