@@ -68,7 +68,7 @@ def make_report(results_dir, sensor_storage, html_rep_name):
         startt = str(res[0][0]['omg']['run_interval'][0]).partition('.')[0]
         csvs_for_test = [
             csv for csv in csvs if
-            (csv.startswith(startt) or
+            (csv.startswith(startt[:-2]) or
              csv.startswith(str(int(startt) - 1)))][0]
 
         sensors_data = os.path.join(sensor_storage, csvs_for_test)

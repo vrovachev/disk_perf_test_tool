@@ -21,8 +21,8 @@ class OmgTestResults(TestResults):
         self.results['sent'] = float(res_list[0])
         self.results['duration'] = int(res_list[1])
         self.results['received'] = sum([int(r) for r in res_list[2:]])
-        self.results['bandwidth'] = self.results['received'] / \
-            self.results['duration']
+        self.results['bandwidth'] = self.results['duration'] and \
+            self.results['received'] / self.results['duration']
         self.results['success'] = self.results['received'] and \
             int(self.results['sent'] / self.results['received'] * 100)
 
