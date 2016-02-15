@@ -108,7 +108,7 @@ sleep 1
 done
 
 # start client
-python simulator.py $CONF_FILE_OPT -l "$TIMEOUT"  -tg $targets --url "$url" rpc-client -tout 60 -p "$CLIENTS" -m 100 &> "$CLIENT_LOG_FILE" &
+python simulator.py $CONF_FILE_OPT -l "$TIMEOUT"  -tg $targets --url "$url" rpc-client --timeout 60 -p "$CLIENTS" -m 100 &> "$CLIENT_LOG_FILE" &
 
 # wait for all simulator processes to finish
 while [ "$(ps aux | grep simulator.py | grep -v grep)" ]

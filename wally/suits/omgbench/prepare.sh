@@ -22,4 +22,4 @@ apt-get -y install python-scipy libblas-dev liblapack-dev libatlas-base-dev gfor
 pip install numpy scipy eventlet PyYAML oslo.messaging petname redis zmq pika_pool
 cd oslo.messaging
 python setup.py install
-git fetch https://review.openstack.org/openstack/oslo.messaging refs/changes/78/273478/1 && git cherry-pick FETCH_HEAD
+git fetch https://review.openstack.org/openstack/oslo.messaging refs/changes/95/277795/3 && git checkout FETCH_HEAD

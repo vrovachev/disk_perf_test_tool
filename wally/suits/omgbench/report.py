@@ -94,8 +94,8 @@ def make_report(results_dir, sensor_storage, html_rep_name):
                        headers.split('\n')[1].split(',')][1:]
 
             d = dict(zip(headers, zip(*data.tolist())))
-
-            timestamps = d['fuel.domain.tld']
+            tkey = [key for key in d.keys() if key.endswith('domain.tld')][0]
+            timestamps = d[tkey]
             timestampsd = numpy.array(timestamps)
             times = [datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
                      for ts in timestampsd]
