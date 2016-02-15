@@ -288,7 +288,9 @@ class TwoScriptTest(ThreadedTest):
 
     def do_test(self, node):
         cmd = self.get_remote_for_script(self.run_script)
-        cmd += ' ' + self.config.params.get('run_opts', '')
+        cmd += ' ' + ' '.join(
+            [' '.join(map(lambda x: str(x), opt)) for opt in
+             self.config.params.get('run_opts', {}).items()])
         t1 = time.time()
         res = run_on_node(node)(cmd, timeout=self.run_tout)
         t2 = time.time()

@@ -11,24 +11,27 @@ import jinja2
 logger = logging.getLogger("wally")
 
 
-def plot(x, y, title, save_path, xticks):
+def plot(x, ys, title, save_path, xticks):
     f = plt.figure()
-    plt.axis([min(x), max(x), 0, y.max() + 20])
+    y_max = max([y.max() for y in ys.values()])
+    plt.axis([min(x), max(x), 0, y_max + 20])
     ax1 = f.add_subplot(111)
     xn_ax = numpy.linspace(x[0], x[-1],
                            len(x)*10)
-    yn_cor = interp1d(x, y,
-                      kind='cubic')
     ax1.set_title(title)
-    ax1.plot(xn_ax, yn_cor(xn_ax))
+    for l, y in ys.items():
+        yn_cor = interp1d(x, y,
+                          kind='cubic')
+        ax1.plot(xn_ax, yn_cor(xn_ax), label=l)
     display_timestamps = x[::(len(x) / 20 if
-                                       len(x) > 20
-                                       else 1)]
+                              len(x) > 20
+                              else 1)]
     plt.xticks(display_timestamps, xticks, size='small',
                rotation=70)
     plt.tight_layout()
     plt.xlabel('Timestamps')
 
+    ax1.legend(loc='best', shadow=True)
     plt.savefig(save_path)
     plt.close()
 
@@ -49,7 +52,12 @@ def make_report(results_dir, sensor_storage, html_rep_name):
     span_size = 12 / len(results)
     node_sens_plot = {}
 
-    sensors = ['eth0.recv_bytes', 'eth0.send_bytes', 'cpu.procs_queue']
+    sensors = {'cpu': ['us', 'sy', 'id', 'wa', 'st'],
+               'mem': ['swpd', 'free', 'buff', 'cache'],
+               'io': ['bi', 'bo'],
+               'swap': ['si', 'so'],
+               'system': ['in', 'cs'],
+               'procs': ['r', 'b']}
 
     results_l = []
     for test_name, res in results:
@@ -82,25 +90,24 @@ def make_report(results_dir, sensor_storage, html_rep_name):
                                     dtype=int, autostrip=True,
                                     converters={4: lambda s: float(s or 0)})
             headers = open(sensors_data).read()
-            headers = headers.split('\n')[1].split(',')[1:]
+            headers = [header.strip() for header in
+                       headers.split('\n')[1].split(',')][1:]
 
-            d = zip(headers, *data.tolist())
+            d = dict(zip(headers, zip(*data.tolist())))
 
-            timestamps = d.pop(0)[1:]
+            timestamps = d['fuel.domain.tld']
             timestampsd = numpy.array(timestamps)
             times = [datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
                      for ts in timestampsd]
-            for i in range(len(d)):
-                title = d[i][0]
-                if title not in sensors:
-                    continue
 
+            for sens_name, sens in sensors.items():
+                title = sens_name
+                plotd = dict([(s, numpy.array(d[s])) for s in sens])
                 fname = os.path.join(results_dir,
                                      'plots/test-%s-%s-%s.svg' % (node,
                                                                   test_name,
                                                                   title))
-                plot(timestamps, numpy.array(d[i][1:]), title, fname, times)
-
+                plot(timestamps, plotd, title, fname, times)
                 node_sens_plot.setdefault(node, {})
                 node_sens_plot[node].setdefault(test_name, {})
                 node_sens_plot[node][test_name][title] = fname
