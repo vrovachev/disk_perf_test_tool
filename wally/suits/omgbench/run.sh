@@ -41,6 +41,9 @@ rabbit_port=`cat /etc/nova/nova.conf | grep rabbit_port | grep -v "#" | awk '{pr
 
 if [ "$TEST" = "pika" ]
  then
+  echo "[oslo_messaging_pika]" > /tmp/pika.conf
+  echo "pool_max_size = 100" >> /tmp/pika.conf
+  CONF_FILE_OPT="--config-file /tmp/pika.conf"
    url="pika://"
    for host in $rabbit_hosts;
     do
@@ -60,9 +63,11 @@ fi
 if [ "$TEST" = "zmq" ]
  then
    url="zmq://"
-   for host in $rabbit_hosts;
+   sentinel=""
+   contr_hosts=`echo "$rabbit_hosts" | sed 's/:5673//g'`
+   for host in $contr_hosts;
     do
-     url="$url$host:26379,"
+     sentinel="$sentinel$host:26379, "
     done
 fi
 
@@ -74,13 +79,16 @@ cd /tmp/oslo.messaging/tools
 source /tmp/venv/bin/activate
 
 # retrieve host ip
-host=`ip a | grep 10.20 | awk '{print $2}' | sed 's/\//\ /g' | awk '{print $1}'`
+host_ip=`ip a | grep 192.168 | awk '{print $2}' | sed 's/\//\ /g' | awk '{print $1}' |head -1`
 
 # if zmq - start broker
 if [ "$TEST" = "zmq" ]
 then
-    echo "[matchmaker_redis]" > /tmp/zmq.conf
-    echo "$url" > /tmp/zmq.conf
+    echo "[DEFAULT]" > /tmp/zmq.conf
+    echo "rpc_zmq_host = $host_ip" >> /tmp/zmq.conf
+    echo "[matchmaker_redis]" >> /tmp/zmq.conf
+    echo "sentinel_hosts = $sentinel" | cut -c 1-73 >> /tmp/zmq.conf
+    CONF_FILE_OPT="--config-file /tmp/zmq.conf"
     oslo-messaging-zmq-broker --config-file /tmp/zmq.conf &> /tmp/broker.log &
 fi
 
@@ -90,7 +98,7 @@ seq_topics=`seq "$NUM_TOPICS"`
 topics=`for i in $seq_topics; do echo "becnhmark_topic_$i"; done`
 topics_arr=($topics)
 
-servers=`cat /etc/hosts | grep node- |grep -v node-39| grep -v node-40| grep -v node-25| grep -v messaging| awk '{print $3}'`
+servers=`cat /etc/hosts | grep node- |grep -v node-3| grep -v node-2| grep -v node-4| grep -v messaging| awk '{print $3}'`
 servers_arr=($servers)
 IFS=,
 targets=`eval echo {"${topics_arr[*]}"}.{"${servers_arr[*]}"}`
@@ -117,12 +125,12 @@ sleep 1
 done
 
 # log total sent
-cat "/tmp/testlogs/$TEST/client" | grep "messages were sent" |  grep -o '[0-9,.]\+' | head -2
+cat "/tmp/testlogs/$TEST/client" | grep -o "[0-9,.]\+ messages were sent for [0-9,.]\+" |  grep -o '[0-9,.]\+' | head -2
 
 # log total received
 for i in `seq "$SERVERS"`;
  do
- cat "$SERVER_LOG_FILE$i" | grep "Received total" | grep -o '[0-9,.]\+';
+ cat "$SERVER_LOG_FILE$i" | grep -o "Received total messages: [0-9,.]\+" | grep -o '[0-9,.]\+';
  done
 
 # kill zmq-broker process
