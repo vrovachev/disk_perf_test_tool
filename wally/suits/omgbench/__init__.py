@@ -1,5 +1,5 @@
 import os.path
-
+import re
 
 import texttable
 
@@ -16,15 +16,44 @@ class OmgTestResults(TestResults):
         self.parse()
 
     def parse(self):
-        res_list = self.raw_result.strip().split('\n')
+        durations = []
+        received = 0
+        latencys = []
+
+        latency_mins = []
+        latency_maxs = []
+        sent = self.config.params['run_opts']['num_messages'] \
+               * self.config.params['run_opts']['clients']
+        results = re.findall(
+                'duration: (\\d+\\.\\d+) count: (\\d+)(.*)latency: '
+                '(\\d+\\.\\d+) min: (\\d+\\.\\d+) max: (\\d+\\.\\d+)',
+                self.raw_result.strip())
+        for res in results:
+            duration, count, _x, latency, latency_max, latency_min = res
+            durations.append(float(duration))
+            received += int(count)
+            latencys.append(float(latency))
+            latency_mins.append(float(latency_min))
+            latency_maxs.append(float(latency_max))
+
+        duration = max(durations)
+        totalms = int(received / duration)
+        sucess = int((received / sent) * 100)
+        latency = sum(latencys) / len(latencys)
+        latency_min = min(latency_mins)
+        latency_max = max(latency_maxs)
         self.results = dict()
-        self.results['sent'] = float(res_list[0])
-        self.results['duration'] = int(res_list[1])
-        self.results['received'] = sum([int(r) for r in res_list[2:]])
+        self.results['sent'] = float(sent)
+        self.results['duration'] = int(duration)
+        self.results['received'] = received
         self.results['bandwidth'] = self.results['duration'] and \
             self.results['received'] / self.results['duration']
         self.results['success'] = self.results['received'] and \
             int(self.results['sent'] / self.results['received'] * 100)
+        self.results['latency'] = latency
+        self.results['latency_min'] = latency_min
+        self.results['latency_max'] = latency_max
+
 
     def get_yamable(self):
         return {'omg': {'sent': self.results['sent'],
@@ -47,20 +76,28 @@ class OmgTest(TwoScriptTest):
     def format_for_console(cls, data):
         sent = 0
         received = 0
-        duration = [] 
+        durations = []
+        latencys = []
+        latency_mins = []
+        latency_maxs = []
         for node_res in data:
             for res in node_res:
-                res_list = res.raw_result.strip().split('\n')
-                sent += float(res_list[0])
-                duration.append(int(res_list[1]))
-                received += sum([int(r) for r in res_list[2:]])
+                durations.append(res.results['duration'])
+                received += res.results['received']
+                sent += res.results['sent']
+                latencys.append(res.results['latency'])
+                latency_mins.append(res.results['latency_max'])
+                latency_maxs.append(res.results['latency_min'])
 
-        duration = max(duration)
+        duration = max(durations)
         totalms = int(received / duration)
         sucess = int((received / sent) * 100)
+        latency = sum(latencys) / len(latencys)
+        latency_min = min(latency_mins)
+        latency_max = max(latency_maxs)
         tab = texttable.Texttable(max_width=120)
         tab.set_deco(tab.HEADER | tab.VLINES | tab.BORDER)
         tab.header(["Bandwidth m/s", "Success %", "Total sent",
-                    "Total received"])
-        tab.add_row([totalms, sucess, sent, received])
+                    "Total received", "Latency", "Latency min", "Latency max"])
+        tab.add_row([totalms, sucess, sent, received, latency, latency_min, latency_max])
         return tab.draw()

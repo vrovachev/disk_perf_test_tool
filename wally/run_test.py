@@ -38,6 +38,7 @@ TOOL_TYPE_MAPPER = {
     "pika": OmgTest,
     "zmq": OmgTest,
     "rabbit": OmgTest,
+    "qpid": OmgTest,
 }
 
 
@@ -548,7 +549,7 @@ def console_report_stage(cfg, ctx):
                 rep = "\n\n".join(rep_lst)
             elif tp in ['mysql', 'pgbench'] and data is not None:
                 rep = MysqlTest.format_for_console(data)
-            elif tp in ['omg', 'pika', 'rabbit', 'zmq']:
+            elif tp in ['omg', 'pika', 'rabbit', 'zmq', 'qpid']:
                 rep = OmgTest.format_for_console(data)
             else:
                 logger.warning("Can't generate text report for " + tp)
@@ -593,7 +594,7 @@ def html_report_stage(cfg, ctx):
                                   cfg.get('comment', ''),
                                   html_rep_fname,
                                   lab_info=ctx.hw_info)
-        if tp in ['omg', 'pika', 'rabbit', 'zmq'] and data is not None:
+        if tp in ['omg', 'pika', 'rabbit', 'zmq', 'qpid'] and data is not None:
             omgbench_report.make_report(cfg.results_dir, cfg.sensor_storage,
                                         html_rep_fname)
 
