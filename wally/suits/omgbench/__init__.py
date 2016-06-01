@@ -24,13 +24,23 @@ class OmgTestResults(TestResults):
         latency_maxs = []
         sent = self.config.params['run_opts']['num_messages'] \
                * self.config.params['run_opts']['clients']
-        results = re.findall(
-                'duration: (\\d+\\.\\d+) count: (\\d+)(.*)latency: '
-                '(\\d+\\.\\d+) min: (\\d+\\.\\d+) max: (\\d+\\.\\d+)',
-                self.raw_result.strip())
-        for res in results:
-            duration, count, _x, latency, latency_max, latency_min = res
-            durations.append(float(duration))
+
+        parts = self.raw_result.strip().split("==== wally ====")
+        servers_log = parts[2:]
+
+        for server_log in servers_log:
+            results = re.findall(
+                    'duration: (\\d+\\.\\d+) count: (\\d+)(.*)latency: '
+                    '([-+]?\\d+\\.\\d+) min: ([-+]?\\d+\\.\\d+) max: ([-+]?\\d+\\.\\d+)',
+                    server_log)
+            if results:
+                duration, count, _x, latency, latency_max, latency_min = \
+                    results[0]
+            else:
+                duration, count, latency, latency_max, latency_min = 0,0,0,0, 0
+
+            # 5 seconds server do not receive messages
+            durations.append(float(duration) - 5)
             received += int(count)
             latencys.append(float(latency))
             latency_mins.append(float(latency_min))
@@ -53,7 +63,6 @@ class OmgTestResults(TestResults):
         self.results['latency'] = latency
         self.results['latency_min'] = latency_min
         self.results['latency_max'] = latency_max
-
 
     def get_yamable(self):
         return {'omg': {'sent': self.results['sent'],
@@ -98,6 +107,8 @@ class OmgTest(TwoScriptTest):
         tab = texttable.Texttable(max_width=120)
         tab.set_deco(tab.HEADER | tab.VLINES | tab.BORDER)
         tab.header(["Bandwidth m/s", "Success %", "Total sent",
-                    "Total received", "Latency", "Latency min", "Latency max"])
-        tab.add_row([totalms, sucess, sent, received, latency, latency_min, latency_max])
+                    "Total received", "Latency", "Latency min", "Latency max",
+                    "Duration"])
+        tab.add_row([totalms, sucess, sent, received, latency, latency_min,
+                     latency_max, duration])
         return tab.draw()

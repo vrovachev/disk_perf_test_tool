@@ -43,6 +43,9 @@ rabbit_username=`cat /etc/nova/nova.conf | grep rabbit_user | grep -v "#" | awk 
 rabbit_password=`cat /etc/nova/nova.conf | grep rabbit_pass | grep -v "#" | awk '{print $3}'`
 rabbit_hosts=`cat /etc/nova/nova.conf | grep rabbit_hosts | grep -v "#" | sed 's/rabbit_hosts//g;s/,//g;s/=//g;'`
 rabbit_port=`cat /etc/nova/nova.conf | grep rabbit_port | grep -v "#" | awk '{print $3}'`
+contr_hosts=`echo "$rabbit_hosts" | sed 's/:5673//g'`
+
+hostname=`hostname -s`
 
 if [ "$TEST" = "pika" ]
  then
@@ -69,17 +72,17 @@ if [ "$TEST" = "zmq" ]
  then
    url="zmq://"
    sentinel=""
-   contr_hosts=`echo "$rabbit_hosts" | sed 's/:5673//g'`
    for host in $contr_hosts;
     do
      sentinel="$sentinel$host:26379, "
     done
+    sentinel="{$sentinel::-2}"
 fi
 
 if [ "$TEST" = "qpid" ]
  then
    url="amqp://"
-   for host in $rabbit_hosts;
+   for host in $contr_hosts;
     do
      url="$url$host:5672,"
     done
@@ -101,13 +104,11 @@ then
     echo "[DEFAULT]" > /tmp/zmq.conf
     echo "rpc_zmq_host = $host_ip" >> /tmp/zmq.conf
     echo "[matchmaker_redis]" >> /tmp/zmq.conf
-    echo "sentinel_hosts = $sentinel" | cut -c 1-72 >> /tmp/zmq.conf
+    echo "sentinel_hosts = $sentinel" >> /tmp/zmq.conf
     CONF_FILE_OPT="--config-file /tmp/zmq.conf"
-    oslo-messaging-zmq-broker --config-file /tmp/zmq.conf &> /tmp/broker.log &
 fi
 
 # generate topics
-hostname=`hostname -s`
 seq_topics=`seq "$NUM_TOPICS"`
 topics=`for i in $seq_topics; do echo "becnhmark_topic_$i"; done`
 topics_arr=($topics)
@@ -124,6 +125,11 @@ servers_arr=($servers)
 IFS=,
 targets=`eval echo {"${topics_arr[*]}"}.{"${servers_arr[*]}"}`
 unset IFS
+
+############### Uncomment Network loss #################
+#tc qdisc add dev br-mgmt root netem loss 20%
+
+
 # start servers
 for i in `seq "$SERVERS"`;
  do
@@ -136,8 +142,17 @@ do
 sleep 1
 done
 
+sleep 5 # sleep for all servers to get ready
+
 # start client
+# add "--is-cast" True for cast "--is-cast --is-fanout True" for fanout to the end of command
 python simulator.py $CONF_FILE_OPT -tg $targets --url "$url" rpc-client --timeout 60 -p "$CLIENTS" -m "$NUM_MESSAGES" &> "$CLIENT_LOG_FILE" &
+
+sleep 2 # sleep for client ot start
+
+############### Uncomment distractive #################
+# sleep 5 # sleep before start distractive
+# ssh node-16 'iptables -I INPUT -p tcp --dport 5673 -j REJECT'
 
 # wait for client to finish
 while [ "$(ps aux | grep simulator.py| grep rpc-client | grep -v grep)" ]
@@ -160,17 +175,25 @@ do
 kill -2 "$p"
 done
 
-# sleep for server to calculate
-sleep 2
-
-# log last line
-for i in `seq "$SERVERS"`;
- do
- cat "$SERVER_LOG_FILE$i" | tail -1
- done
-
-# kill zmq-broker process
-for p in `ps aux | grep zmq-broker | grep -v grep | awk '{print $2}'`;
+#wait for servers to finish
+while [ "$(ps aux | grep simulator.py| grep rpc-server | grep -v grep)" ]
 do
-kill "$p"
+sleep 1
+done
+
+############### Uncomment distractive #################
+#ssh node-16 'iptables -D INPUT 1'
+
+############### Uncomment Network loss #################
+#tc qdisc del dev br-mgmt root
+
+# log client file last line with stat
+echo "==== wally ===="
+tail -1 "$CLIENT_LOG_FILE"
+
+# log servers file last line with stat
+for i in `seq "$SERVERS"`;
+do
+echo "==== wally ===="
+tail -1  "$SERVER_LOG_FILE$i"
 done
