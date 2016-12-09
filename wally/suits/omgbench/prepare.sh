@@ -3,22 +3,19 @@
 set -e
 set -x
 
-OMGPATN=/tmp
-
-mkdir -p "$OMGPATN"
-cd "$OMGPATN"
+if [ -d /tmp/venv ]; then
+exit 0
+fi
 
 apt-get update
-apt-get -y install git python-pip
+apt-get -y install git python-pip virtualenv python-dev
 
-git clone https://github.com/openstack/rally
-git clone https://github.com/Yulya/omgbenchmark
-
-mkdir venv
-cd rally
-./install_rally.sh -d "$OMGPATN"/venv -y
-
-cd "$OMGPATN"
-source venv/bin/activate
-apt-get -y install python-scipy libblas-dev liblapack-dev libatlas-base-dev gfortran
-pip install oslo.messaging petname scipy
+cd /tmp
+virtualenv --no-setuptools venv
+git clone http://github.com/openstack/oslo.messaging -b stable/mitaka
+source /tmp/venv/bin/activate
+pip install setuptools
+cd oslo.messaging
+python setup.py install
+pip install eventlet PyYAML oslo.messaging petname redis zmq pika_pool scipy numpy
+pip install kombu
